@@ -1,35 +1,60 @@
 import TopBar from "@/components/TopBar";
 import FoodCard from "@/components/FoodCard";
+import EditFoodDialog from "@/components/EditFoodDialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Search, Upload, Heart } from "lucide-react";
 import { useState } from "react";
+import type { FoodItem } from "@shared/schema";
+import { useLanguage } from "@/lib/languageContext";
 
 export default function Foods() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"all" | "favorites">("all");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [editingFood, setEditingFood] = useState<FoodItem | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const { t } = useLanguage();
 
   // Mock data - TODO: remove mock functionality
-  const mockFoods = [
-    { id: '1', name: 'Petto di Pollo', calories: 165, protein: 31, carbs: 0, fat: 3.6, fiber: 0, isFavorite: true },
-    { id: '2', name: 'Riso Integrale', calories: 216, protein: 5, carbs: 45, fat: 1.8, fiber: 3.5, isFavorite: false },
-    { id: '3', name: 'Broccoli', calories: 55, protein: 3.7, carbs: 11, fat: 0.6, fiber: 2.6, isFavorite: true },
-    { id: '4', name: 'Salmone', calories: 206, protein: 22, carbs: 0, fat: 13, fiber: 0, isFavorite: false },
-    { id: '5', name: 'Avocado', calories: 160, protein: 2, carbs: 8.5, fat: 14.7, fiber: 6.7, isFavorite: true },
-    { id: '6', name: 'Uova', calories: 155, protein: 13, carbs: 1.1, fat: 11, fiber: 0, isFavorite: false },
-  ];
+  const categories = ["Carboidrati", "Frutta", "Latticini", "Proteine", "Verdure"];
+  
+  const [mockFoods, setMockFoods] = useState<FoodItem[]>([
+    { id: '1', name: 'Petto di Pollo', category: 'Proteine', calories: 165, protein: 31, carbs: 0, fat: 3.6, fiber: 0, isFavorite: true },
+    { id: '2', name: 'Riso Integrale', category: 'Carboidrati', calories: 216, protein: 5, carbs: 45, fat: 1.8, fiber: 3.5, isFavorite: false },
+    { id: '3', name: 'Broccoli', category: 'Verdure', calories: 55, protein: 3.7, carbs: 11, fat: 0.6, fiber: 2.6, isFavorite: true },
+    { id: '4', name: 'Salmone', category: 'Proteine', calories: 206, protein: 22, carbs: 0, fat: 13, fiber: 0, isFavorite: false },
+    { id: '5', name: 'Avocado', category: 'Frutta', calories: 160, protein: 2, carbs: 8.5, fat: 14.7, fiber: 6.7, isFavorite: true },
+    { id: '6', name: 'Uova', category: 'Proteine', calories: 155, protein: 13, carbs: 1.1, fat: 11, fiber: 0, isFavorite: false },
+  ]);
 
   const filteredFoods = mockFoods.filter(food => {
     const matchesSearch = food.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesTab = activeTab === "all" || (activeTab === "favorites" && food.isFavorite);
-    return matchesSearch && matchesTab;
+    const matchesCategory = selectedCategory === "all" || food.category === selectedCategory;
+    return matchesSearch && matchesTab && matchesCategory;
   });
+
+  const handleSaveFood = (food: FoodItem) => {
+    setMockFoods(prev => prev.map(f => f.id === food.id ? food : f));
+  };
+
+  const handleDeleteFood = (id: string) => {
+    setMockFoods(prev => prev.filter(f => f.id !== id));
+  };
 
   return (
     <div className="min-h-screen bg-background pb-20">
       <TopBar 
-        title="Database Cibi"
+        title={t.foods.title}
         showSearch={false}
         showAdd={false}
       />
@@ -41,7 +66,7 @@ export default function Foods() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Cerca cibi..."
+              placeholder={t.foods.search}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -49,26 +74,39 @@ export default function Foods() {
             />
           </div>
 
-          <Button
-            variant="outline"
-            className="w-full"
-            data-testid="button-upload-csv"
-            onClick={() => console.log('Upload CSV')}
-          >
-            <Upload className="w-4 h-4 mr-2" />
-            Carica File CSV
-          </Button>
+          <div className="grid grid-cols-2 gap-3">
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger data-testid="select-category-filter">
+                <SelectValue placeholder={t.foods.category} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t.foods.allCategories}</SelectItem>
+                {categories.sort().map(cat => (
+                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Button
+              variant="outline"
+              data-testid="button-upload-csv"
+              onClick={() => console.log('Upload CSV')}
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              CSV
+            </Button>
+          </div>
         </div>
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
           <TabsList className="w-full">
             <TabsTrigger value="all" className="flex-1" data-testid="tab-all">
-              Tutti ({mockFoods.length})
+              {t.foods.all} ({mockFoods.length})
             </TabsTrigger>
             <TabsTrigger value="favorites" className="flex-1" data-testid="tab-favorites">
               <Heart className="w-4 h-4 mr-2" />
-              Preferiti ({mockFoods.filter(f => f.isFavorite).length})
+              {t.foods.favorites} ({mockFoods.filter(f => f.isFavorite).length})
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -82,21 +120,33 @@ export default function Foods() {
                 food={food}
                 onToggleFavorite={(id) => console.log('Toggle favorite:', id)}
                 onAdd={(id) => console.log('Add food:', id)}
-                onClick={(id) => console.log('View food details:', id)}
+                onClick={(id) => {
+                  setEditingFood(food);
+                  setDialogOpen(true);
+                }}
               />
             ))
           ) : (
             <div className="text-center py-12">
-              <p className="text-muted-foreground">Nessun cibo trovato</p>
+              <p className="text-muted-foreground">{t.foods.noFoodsFound}</p>
             </div>
           )}
         </div>
 
         {/* Pagination Info */}
         <div className="text-center text-sm text-muted-foreground">
-          Mostrando {filteredFoods.length} di {mockFoods.length} cibi
+          {t.foods.showing} {filteredFoods.length} {t.foods.of} {mockFoods.length} {t.foods.items}
         </div>
       </div>
+
+      <EditFoodDialog 
+        food={editingFood}
+        categories={categories}
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        onSave={handleSaveFood}
+        onDelete={handleDeleteFood}
+      />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Heart, Plus } from "lucide-react";
+import { Heart, Plus, Beef, Wheat, Droplets } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { FoodItem } from "@shared/schema";
 
@@ -27,17 +27,20 @@ export default function FoodCard({ food, onToggleFavorite, onAdd, onClick }: Foo
             )}
           </div>
           <div className="flex flex-wrap gap-2">
-            <Badge variant="secondary" className="text-xs">
+            <Badge variant="secondary" className="text-xs font-semibold">
               {food.calories} kcal
             </Badge>
-            <Badge variant="outline" className="text-xs">
-              P: {food.protein}g
+            <Badge variant="outline" className="text-xs flex items-center gap-1">
+              <Beef className="w-3 h-3" />
+              {food.protein}g
             </Badge>
-            <Badge variant="outline" className="text-xs">
-              C: {food.carbs}g
+            <Badge variant="outline" className="text-xs flex items-center gap-1">
+              <Wheat className="w-3 h-3" />
+              {food.carbs}g
             </Badge>
-            <Badge variant="outline" className="text-xs">
-              G: {food.fat}g
+            <Badge variant="outline" className="text-xs flex items-center gap-1">
+              <Droplets className="w-3 h-3" />
+              {food.fat}g
             </Badge>
           </div>
         </div>

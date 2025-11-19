@@ -1,16 +1,18 @@
-import { Home, UtensilsCrossed, BarChart3, Settings, Apple } from "lucide-react";
+import { Home, UtensilsCrossed, BarChart3, Settings, Apple, ShoppingBag } from "lucide-react";
 import { Link, useLocation } from "wouter";
-
-const navItems = [
-  { icon: Home, label: "Diario", path: "/" },
-  { icon: Apple, label: "Cibi", path: "/foods" },
-  { icon: UtensilsCrossed, label: "Pasti", path: "/meals" },
-  { icon: BarChart3, label: "Statistiche", path: "/stats" },
-  { icon: Settings, label: "Impostazioni", path: "/settings" },
-];
+import { useLanguage } from "@/lib/languageContext";
 
 export default function BottomNav() {
   const [location] = useLocation();
+  const { t } = useLanguage();
+  
+  const navItems = [
+    { icon: Home, label: t.nav.diary, path: "/" },
+    { icon: Apple, label: t.nav.foods, path: "/foods" },
+    { icon: UtensilsCrossed, label: t.nav.meals, path: "/meals" },
+    { icon: ShoppingBag, label: t.nav.lists, path: "/lists" },
+    { icon: BarChart3, label: t.nav.stats, path: "/stats" },
+  ];
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-card-border z-50 safe-area-bottom">
