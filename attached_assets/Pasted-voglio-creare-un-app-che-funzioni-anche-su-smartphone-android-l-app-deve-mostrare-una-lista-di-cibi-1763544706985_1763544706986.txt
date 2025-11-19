@@ -1,0 +1,42 @@
+voglio creare un app che funzioni anche su smartphone android, l'app deve mostrare una lista di cibi (massimo 8 per pagina) con i relativi valori nutrizionali deve consentire di caricare un file csv che contiene la lista dei cibi. 
+deve avere una barra dei pulsanti in basso che consentano di creare un pasto selezionando i cibi dalla lista e specificando quanti grammi di ciascun cibo inserito nel pasto. 
+per ciascun pasto deve poi indicare la somma dei valori nutrizionali: calorie, carboidrati, proteine, grassi, etc. Inoltre deve consentire di salvare i cibi preferiti ed i pasti preferiti. i cibi devono essere ricercabili per nome.  
+ci deve essere una sezione di configurazione dove si possono impostare i parametri dinamici dell'applicazione tipo il numero massimo di cibi da mostrare per pagina.
+
+voglio aggiungire un "Diario Alimentare con Storico": gli utenti devono poter registrare cosa mangiano in un diario giornaliero (colazione, pranzo, cena, spuntini). 
+Una vista calendario permetterebbe di navigare facilmente nei giorni passati per analizzare le proprie abitudini.
+Inoltre gli utenti devono poter impostare degli Obiettivi Nutrizionali giornalieri per calorie, macronutrienti (proteine, carboidrati, grassi) e anche micronutrienti (come fibre, zuccheri, sodio). 
+L'interfaccia deve mostrare delle barre di progresso che si riempiono durante la giornata e registrare i risultati nel diario alimentare con storico.
+aggiungi nel del diario alimentare una sezione con Statistiche e Grafici Avanzati: Una sezione dedicata a visualizzare i dati nel tempo. Ad esempio, grafici a torta per la distribuzione dei macronutrienti nella giornata/settimana, o grafici a linee per vedere l'andamento dell'assunzione calorica.
+
+
+aggiungi all'app una funzionalità di Tracking dell'Idratazione: Un semplice ma efficace modulo per tracciare i bicchieri d'acqua bevuti durante il giorno. nei setting l'utente può indicare il target di litri di acqua che vuole bere nella giornata per esempio 2,5 litri, il default sarà 2litri.
+sempre dai settings potrà abilitare la ricezione di promemoria per bere acqua ogni tot di minuti configurabile, di default ogni 120 minuti, il promemoria si deve poter abilitare e disabilitare dai settings, inoltre dai settings deve essere indicata l'ora di inizio e fine invio dei promemoria di default sarà proposto attivo dalle 8 di mattina fino alle 8 di sera.
+inotre nei settings l'utente può indicare quanto sarà un bicchiere, per esempio 150 ml di default sarà 200 ml. l'applicazione terra traccia nel diario quanti ml di acqua sono stati bevuti nella giornata e consentirà di aggiungere 1 bicchiere ad ogni tap sulla relativa icona
+se l'utente ha abilitato i promemoria allora l'app deve inviare i promemoria tramite notifica per ricordare all'utente di bere.
+
+
+Aggiungi una funzione liste della Spesa: deve essere possibile creare e cancellare quante liste della spesa si vuole, si possono aggiungere alla lista alimenti ricercabili da quelli presenti nel database oppure si possono aggiungere i nomi degli alimenti a mano, gli alimenti devono poter essere eliminati dalla lista o solo sbarrare il relativo testo(per indicare che è stato compraro).
+Ci deve essere un bottone per SBARRARLI o ripristinarli tutti.
+Ci deve essere una lista della spesa predefinita non cancellabie chiamata Pasti questa lista ha le funzionalità di aggiunta e rimozione degli alimenti come le altre ma in più sarà possibile inviare alimenti a questa lista direttamente dalla scheda di visualizzazione dei pasti.
+Quando un utente crea un pasto o lo visualizza potrebbe aggiungere gli ingredienti mancanti alla lista della spesa.
+
+
+Aggiungi funzionalità di Gamification e Sfide. Introduci elementi di gioco per mantenere alta la motivazione dell'utente. 
+Ad esempio, "badge" per aver tracciato i pasti per 7 giorni di fila, o sfide come "Una settimana sotto i 20g di zuccheri al giorno", o "hai raggiunto l'obiettivo di acqua da bere nella giornata".
+Aggiungi queste notifiche in una sezione interna all'app e se possibile invia anche delle notifiche di sistema.
+Punteggio del Pasto/Giornata: Assegnare un punteggio (es. da A+ a F) a ogni pasto o all'intera giornata in base al bilanciamento dei nutrienti, alla varietà degli alimenti e al rispetto degli obiettivi.
+
+
+Aggiungi un calendario settimanale nella sezione Pasti, da qui si potrà associare un pasto ad un giorno mediante drag and drop, 1 solo pasto può essere associato ad 1 giorno
+1 pasto può essere associato a più giorni
+l'associazione più recente sovrascrive una eventuale già esistente
+il calendario deve evidenziare i giorni già associati e quelli senza associazione
+cliccando sul un giorno del calendario deve essere mostrato il nome del pasto associato al giorno
+se viene cancellato il pasto vengono cancellate anche le relative associazioni
+un pulsante deve permettere di generare automaticamente la lista della spesa aggregando tutti gli ingredienti dei pasti settimanali.
+quando si avvia l'app questa deve controllare se ha già copiato nel diario il pasto registrato nel calendario per il giorno corrente,
+se ha già fatto il check in precedenza (ad un altro avvio) allora non fa nulla, altrimenti controlla se c'è un pasto associato al giorno corrente nel calendario settimanale della sezione pasti
+se non c'è un pasto registrato non fa nulla, altrimenti chiede all'utente mediante un pop-up se procedere con la copia.
+
+l'accesso ai dati deve essere centralizzato e deve essere facile cambiare quale store usare per i dati senza modifiche a parte l'adapter per l'accesso ai dati, per iniziare facile usiamo un database locale all'app ma a tendere questo verrà sostituito con un database remoto acceduto mediante api rest.
