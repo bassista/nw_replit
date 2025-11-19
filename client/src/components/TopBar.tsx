@@ -1,5 +1,6 @@
-import { Search, Plus, Menu } from "lucide-react";
+import { Search, Plus, Menu, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link, useLocation } from "wouter";
 
 interface TopBarProps {
   title: string;
@@ -18,6 +19,9 @@ export default function TopBar({
   showSearch = false,
   showAdd = false 
 }: TopBarProps) {
+  const [location] = useLocation();
+  const isSettingsPage = location === '/settings';
+
   return (
     <header className="sticky top-0 bg-card border-b border-card-border z-40">
       <div className="flex items-center justify-between h-14 px-4 max-w-2xl mx-auto">
@@ -54,6 +58,17 @@ export default function TopBar({
             >
               <Menu className="w-5 h-5" />
             </Button>
+          )}
+          {!isSettingsPage && (
+            <Link href="/settings">
+              <Button
+                size="icon"
+                variant="ghost"
+                data-testid="button-settings"
+              >
+                <Settings className="w-5 h-5" />
+              </Button>
+            </Link>
           )}
         </div>
       </div>
