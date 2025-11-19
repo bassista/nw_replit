@@ -1,0 +1,62 @@
+import { Search, Plus, Menu } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+interface TopBarProps {
+  title: string;
+  onSearch?: () => void;
+  onAdd?: () => void;
+  onMenu?: () => void;
+  showSearch?: boolean;
+  showAdd?: boolean;
+}
+
+export default function TopBar({ 
+  title, 
+  onSearch, 
+  onAdd, 
+  onMenu,
+  showSearch = false,
+  showAdd = false 
+}: TopBarProps) {
+  return (
+    <header className="sticky top-0 bg-card border-b border-card-border z-40">
+      <div className="flex items-center justify-between h-14 px-4 max-w-2xl mx-auto">
+        <div className="flex items-center gap-3">
+          <h1 className="text-lg font-semibold text-foreground">{title}</h1>
+        </div>
+        <div className="flex items-center gap-2">
+          {showSearch && (
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={onSearch}
+              data-testid="button-search"
+            >
+              <Search className="w-5 h-5" />
+            </Button>
+          )}
+          {showAdd && (
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={onAdd}
+              data-testid="button-add"
+            >
+              <Plus className="w-5 h-5" />
+            </Button>
+          )}
+          {onMenu && (
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={onMenu}
+              data-testid="button-menu"
+            >
+              <Menu className="w-5 h-5" />
+            </Button>
+          )}
+        </div>
+      </div>
+    </header>
+  );
+}
