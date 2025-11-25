@@ -150,25 +150,28 @@ export default function Stats() {
     setConsistencyData(consistencyTrend);
 
     // ===== TOP 10 FOODS =====
-    const foodFreq: { [key: string]: { name: string; count: number; totalCalories: number; totalProtein: number } } = {};
+    const foodFreq: { [key: string]: { name: string; count: number; totalCalories: number; totalProtein: number; totalCarbs: number; totalFat: number } } = {};
     for (let i = 29; i >= 0; i--) {
       const date = subDays(today, i);
       const dateKey = format(date, 'yyyy-MM-dd');
       const mealItems = getDailyMeal(dateKey);
       mealItems.forEach(item => {
-        const foodId = item.id;
+        const foodId = item.foodId;
         if (!foodFreq[foodId]) {
-          const food = foods.find(f => f.id === foodId);
           foodFreq[foodId] = {
-            name: food?.name || 'Sconosciuto',
+            name: item.name,
             count: 0,
             totalCalories: 0,
             totalProtein: 0,
+            totalCarbs: 0,
+            totalFat: 0,
           };
         }
         foodFreq[foodId].count += 1;
         foodFreq[foodId].totalCalories += item.calories;
         foodFreq[foodId].totalProtein += item.protein;
+        foodFreq[foodId].totalCarbs += item.carbs;
+        foodFreq[foodId].totalFat += item.fat;
       });
     }
     const topFoods = Object.values(foodFreq)
@@ -179,8 +182,8 @@ export default function Stats() {
         frequenza: food.count,
         calorie: Math.round(food.totalCalories),
         proteine: Math.round(food.totalProtein),
-        carboidrati: 0,
-        grassi: 0,
+        carboidrati: Math.round(food.totalCarbs),
+        grassi: Math.round(food.totalFat),
       }));
     setTopFoodsData(topFoods);
 
