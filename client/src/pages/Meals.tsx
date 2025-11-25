@@ -258,7 +258,7 @@ export default function Meals() {
             </DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-2 max-h-96 overflow-y-auto">
+          <div className="space-y-2">
             {meals.map(meal => (
               <Button
                 key={meal.id}
