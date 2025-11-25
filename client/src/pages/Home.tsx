@@ -122,11 +122,29 @@ export default function Home() {
     const currentCarbs = dailyMealItems.reduce((sum, item) => sum + item.carbs, 0);
     const currentFat = dailyMealItems.reduce((sum, item) => sum + item.fat, 0);
 
+    // Calculate extra nutrients (fibra, zucchero, sodio)
+    let currentFiber = 0;
+    let currentSugar = 0;
+    let currentSodium = 0;
+
+    dailyMealItems.forEach(item => {
+      const food = availableFoods.find(f => f.id === item.foodId);
+      if (food) {
+        const gramsMultiplier = item.grams / 100;
+        currentFiber += (food.fiber || 0) * gramsMultiplier;
+        currentSugar += (food.sugar || 0) * gramsMultiplier;
+        currentSodium += (food.sodium || 0) * gramsMultiplier;
+      }
+    });
+
     return [
       { name: 'Calorie', current: currentCalories, target: settings.calorieGoal, unit: 'kcal', color: 'chart-1' },
       { name: 'Proteine', current: currentProtein, target: settings.proteinGoal, unit: 'g', color: 'chart-2' },
       { name: 'Carboidrati', current: currentCarbs, target: settings.carbsGoal, unit: 'g', color: 'chart-3' },
       { name: 'Grassi', current: currentFat, target: settings.fatGoal, unit: 'g', color: 'chart-4' },
+      { name: 'Fibra', current: Math.round(currentFiber * 10) / 10, unit: 'g', color: 'chart-5', isExtra: true },
+      { name: 'Zucchero', current: Math.round(currentSugar * 10) / 10, unit: 'g', color: 'chart-5', isExtra: true },
+      { name: 'Sodio', current: Math.round(currentSodium), unit: 'mg', color: 'chart-5', isExtra: true },
     ];
   };
 
