@@ -105,15 +105,35 @@ Preferred communication style: Simple, everyday language.
 - Shopping list generation from weekly meal plan
 
 **Food Diary**:
-- Daily food intake logging
+- Daily food intake logging with drag-drop reordering
 - Nutritional goal tracking with progress visualization
 - Daily score calculation
 - Copy functionality (from past days, from meal plans)
+- "Copy from Past" feature to copy meals from previous days
+- "Clear Day" button to remove all items from daily diary
 
 **Health Tracking**:
 - Water intake monitoring with reminder system
-- Weight, glucose, and insulin logging
+- Weight, glucose, and insulin logging with date-based tracking
 - Historical data visualization
+
+**Shopping Lists**:
+- Smart shopping list generation from weekly meal calendar
+- Intelligent merging of duplicate ingredients with quantity aggregation
+- Category-based grouping for better organization
+- Shopping list creation from individual meals
+
+**Meal Planning**:
+- Drag-drop weekly meal assignment with enhanced UX
+- Visual feedback for drag operations
+- Meal reordering in daily diary with drag-drop
+
+**Analytics & Statistics**:
+- 7-day nutrient trend visualization
+- Macro distribution pie chart
+- Hydration tracking chart
+- Weekly consistency bar chart
+- Summary cards (average calories, water, days tracked)
 
 **Gamification**:
 - Badge/achievement system
