@@ -22,6 +22,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Save, Download, Upload, Trash2, Plus, Edit2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLanguage } from "@/lib/languageContext";
@@ -31,6 +38,9 @@ import { loadSettings, saveSettings, loadCategories, saveCategories, exportAllDa
 export default function Settings() {
   const { language, setLanguage, t } = useLanguage();
   const [showResetDialog, setShowResetDialog] = useState(false);
+  const [showCategoryDialog, setShowCategoryDialog] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [editingCategoryIndex, setEditingCategoryIndex] = useState<number | null>(null);
   const [settings, setSettings] = useState(loadSettings());
   const [categories, setCategories] = useState(loadCategories());
 
@@ -81,6 +91,35 @@ export default function Settings() {
   const handleResetDatabase = () => {
     clearAllData();
     window.location.reload();
+  };
+
+  const handleAddCategory = () => {
+    if (newCategoryName.trim() && !categories.includes(newCategoryName.trim())) {
+      if (editingCategoryIndex !== null) {
+        // Edit mode
+        const updatedCategories = [...categories];
+        updatedCategories[editingCategoryIndex] = newCategoryName.trim();
+        setCategories(updatedCategories);
+      } else {
+        // Add mode
+        setCategories([...categories, newCategoryName.trim()]);
+      }
+      setNewCategoryName('');
+      setEditingCategoryIndex(null);
+      setShowCategoryDialog(false);
+    }
+  };
+
+  const handleEditCategory = (idx: number) => {
+    setEditingCategoryIndex(idx);
+    setNewCategoryName(categories[idx]);
+    setShowCategoryDialog(true);
+  };
+
+  const handleOpenAddDialog = () => {
+    setEditingCategoryIndex(null);
+    setNewCategoryName('');
+    setShowCategoryDialog(true);
   };
 
   return (
@@ -185,7 +224,7 @@ export default function Settings() {
                 <Button
                   size="icon"
                   variant="ghost"
-                  onClick={() => console.log('Edit category:', cat)}
+                  onClick={() => handleEditCategory(idx)}
                   data-testid={`button-edit-category-${idx}`}
                 >
                   <Edit2 className="w-4 h-4" />
@@ -204,7 +243,7 @@ export default function Settings() {
           <Button
             variant="outline"
             className="w-full"
-            onClick={() => console.log('Add category')}
+            onClick={handleOpenAddDialog}
             data-testid="button-add-category"
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -353,6 +392,39 @@ export default function Settings() {
           {t.settings.saveSettings}
         </Button>
       </div>
+
+      {/* Add/Edit Category Dialog */}
+      <Dialog open={showCategoryDialog} onOpenChange={setShowCategoryDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editingCategoryIndex !== null ? 'Modifica Categoria' : 'Aggiungi Categoria'}
+            </DialogTitle>
+          </DialogHeader>
+          <Input
+            placeholder="Nome categoria..."
+            value={newCategoryName}
+            onChange={(e) => setNewCategoryName(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && handleAddCategory()}
+            data-testid="input-category-name"
+          />
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowCategoryDialog(false)}
+            >
+              Annulla
+            </Button>
+            <Button
+              onClick={handleAddCategory}
+              data-testid="button-confirm-category"
+              disabled={!newCategoryName.trim() || categories.includes(newCategoryName.trim())}
+            >
+              {editingCategoryIndex !== null ? 'Modifica' : 'Aggiungi'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Reset Confirmation Dialog */}
       <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
