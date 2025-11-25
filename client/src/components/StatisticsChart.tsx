@@ -4,6 +4,7 @@ import {
   PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, Legend,
   BarChart, Bar, AreaChart, Area, ComposedChart
 } from "recharts";
+import React from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface StatisticsChartProps {
@@ -55,17 +56,17 @@ export default function StatisticsChart({ type, data, title, onPeriodChange, col
     }
 
     return (
-      <div className="w-full h-64">
+      <div className={`w-full ${type === "pie" ? "h-80" : "h-64"}`}>
         {type === "pie" ? (
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
                 data={data}
                 cx="50%"
-                cy="50%"
+                cy="45%"
                 labelLine={false}
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                outerRadius={80}
+                label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}
+                outerRadius={70}
                 fill="#8884d8"
                 dataKey="value"
               >
@@ -73,7 +74,8 @@ export default function StatisticsChart({ type, data, title, onPeriodChange, col
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip />
+              <Tooltip formatter={(value) => `${value} cal`} />
+              <Legend verticalAlign="bottom" height={36} />
             </PieChart>
           </ResponsiveContainer>
         ) : type === "line" ? (
