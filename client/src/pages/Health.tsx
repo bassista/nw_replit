@@ -54,7 +54,7 @@ export default function Health() {
     });
   };
 
-  // Handle Glucosio add
+  // Handle Glucosio add (sum to current value)
   const handleAddGlucose = () => {
     if (!glucoseInput) {
       toast({
@@ -64,18 +64,20 @@ export default function Health() {
       });
       return;
     }
-    const glucose = parseFloat(glucoseInput);
-    saveHealthData(dateKey, { glucose });
+    const glucoseToAdd = parseFloat(glucoseInput);
+    const currentGlucose = healthData.glucose || 0;
+    const newGlucose = currentGlucose + glucoseToAdd;
+    saveHealthData(dateKey, { glucose: newGlucose });
     const updated = getHealthData(dateKey);
     setHealthData(updated);
     setGlucoseInput('');
     toast({
-      title: "Glucosio registrato",
-      description: `${glucose} mg/dL registrato.`,
+      title: "Glucosio aggiunto",
+      description: `+${glucoseToAdd} mg/dL. Totale: ${newGlucose} mg/dL.`,
     });
   };
 
-  // Handle Insulina add
+  // Handle Insulina add (sum to current value)
   const handleAddInsulin = () => {
     if (!insulinInput) {
       toast({
@@ -85,14 +87,16 @@ export default function Health() {
       });
       return;
     }
-    const insulin = parseFloat(insulinInput);
-    saveHealthData(dateKey, { insulin });
+    const insulinToAdd = parseFloat(insulinInput);
+    const currentInsulin = healthData.insulin || 0;
+    const newInsulin = currentInsulin + insulinToAdd;
+    saveHealthData(dateKey, { insulin: newInsulin });
     const updated = getHealthData(dateKey);
     setHealthData(updated);
     setInsulinInput('');
     toast({
-      title: "Insulina registrata",
-      description: `${insulin} U registrata.`,
+      title: "Insulina aggiunta",
+      description: `+${insulinToAdd} U. Totale: ${newInsulin} U.`,
     });
   };
 
