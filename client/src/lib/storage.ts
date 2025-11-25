@@ -379,8 +379,12 @@ export function importAllData(data: any) {
 }
 
 export function clearAllData() {
-  // Remove all keys in STORAGE_KEYS
-  Object.values(STORAGE_KEYS).forEach(key => localStorage.removeItem(key));
+  // Remove all keys in STORAGE_KEYS EXCEPT shopping lists
+  Object.entries(STORAGE_KEYS).forEach(([, key]) => {
+    if (key !== STORAGE_KEYS.shoppingLists) {
+      localStorage.removeItem(key);
+    }
+  });
   
   // Remove additional static keys
   localStorage.removeItem('nutritrack_meals');
@@ -395,4 +399,17 @@ export function clearAllData() {
     }
   }
   keysToRemove.forEach(key => localStorage.removeItem(key));
+
+  // Clear shopping lists but keep predefined ones empty
+  const currentLists = loadShoppingLists();
+  const clearedLists = currentLists
+    .filter(list => list.isPredefined) // Keep only predefined lists
+    .map(list => ({ ...list, items: [] })); // Empty their items
+  
+  if (clearedLists.length > 0) {
+    saveShoppingLists(clearedLists);
+  } else {
+    // If no predefined lists exist, remove the key entirely
+    localStorage.removeItem(STORAGE_KEYS.shoppingLists);
+  }
 }
