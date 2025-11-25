@@ -75,10 +75,10 @@ export default function Settings() {
       const file = e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = (event) => {
+      reader.onload = async (event) => {
         try {
-          const data = JSON.parse(event.target?.result as string);
-          importAllData(data);
+          const jsonString = event.target?.result as string;
+          await importAllData(jsonString);
           toast({
             title: language === 'it' ? 'Importazione completata' : 'Import successful',
             description: language === 'it' ? 'I tuoi dati sono stati ripristinati. Pagina ricaricata.' : 'Your data has been restored. Page reloaded.',

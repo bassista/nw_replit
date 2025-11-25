@@ -412,8 +412,18 @@ export async function exportData(): Promise<string> {
   return JSON.stringify(data, null, 2);
 }
 
-export async function importData(json: string) {
-  const data = JSON.parse(json);
+export async function importData(json: string | ProgressEvent<FileReader>) {
+  let jsonString: string;
+  
+  // Handle FileReader result
+  if (json instanceof ProgressEvent || (json && typeof json === 'object' && 'target' in json)) {
+    const event = json as ProgressEvent<FileReader>;
+    jsonString = event.target?.result as string || '';
+  } else {
+    jsonString = json as string;
+  }
+  
+  const data = JSON.parse(jsonString);
   
   if (data.foods) saveFoods(data.foods);
   if (data.dailyMeals) saveDailyMeals(data.dailyMeals);
