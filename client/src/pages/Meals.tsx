@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Plus, Heart, ShoppingCart, Trash2, Search } from "lucide-react";
 import { useState, useEffect } from "react";
+import { Link } from "wouter";
 import { loadFoods, loadMeals, saveMeals, loadWeeklyAssignments, assignMealToDay, removeMealFromDay, calculateMealNutrition, saveShoppingLists, loadShoppingLists } from "@/lib/storage";
 import type { Meal } from "@/lib/storage";
 import type { FoodItem } from "@shared/schema";
@@ -37,6 +38,7 @@ export default function Meals() {
   const [draggedMealId, setDraggedMealId] = useState<string | undefined>();
   const [searchQuery, setSearchQuery] = useState('');
   const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(true);
 
   useEffect(() => {
     const loadedFoods = loadFoods();
@@ -159,15 +161,42 @@ export default function Meals() {
           Crea Nuovo Pasto
         </Button>
 
+        {/* Navigation Buttons */}
+        <div className="grid grid-cols-2 gap-3">
+          <Button
+            variant="outline"
+            className="w-full"
+            data-testid="button-go-to-shopping-lists"
+            asChild
+          >
+            <Link href="/lists">
+              <ShoppingCart className="w-4 h-4 mr-2" />
+              Lista Spesa
+            </Link>
+          </Button>
+
+          <Button
+            variant="outline"
+            className="w-full"
+            data-testid="button-toggle-calendar"
+            onClick={() => setShowCalendar(!showCalendar)}
+          >
+            <span className="w-4 h-4 mr-2">{showCalendar ? '📅' : '📋'}</span>
+            {showCalendar ? 'Nascondi' : 'Mostra'} Calendario
+          </Button>
+        </div>
+
         {/* Weekly Calendar */}
-        <WeeklyCalendar 
-          weekStart={new Date()}
-          assignments={assignments}
-          onDayClick={handleDayClick}
-          onRemoveMeal={handleRemoveMealFromDay}
-          onDropMeal={handleDropOnCalendarDay}
-          draggedMealId={draggedMealId}
-        />
+        {showCalendar && (
+          <WeeklyCalendar 
+            weekStart={new Date()}
+            assignments={assignments}
+            onDayClick={handleDayClick}
+            onRemoveMeal={handleRemoveMealFromDay}
+            onDropMeal={handleDropOnCalendarDay}
+            draggedMealId={draggedMealId}
+          />
+        )}
 
         {/* Generate Shopping List Button */}
         <Button
