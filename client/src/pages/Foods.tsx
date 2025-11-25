@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Upload, Heart, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Heart, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useEffect } from "react";
 import type { FoodItem } from "@shared/schema";
 import { useLanguage } from "@/lib/languageContext";
@@ -139,7 +139,7 @@ export default function Foods() {
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
               <SelectTrigger data-testid="select-category-filter">
                 <SelectValue placeholder={t.foods.category} />
@@ -151,15 +151,6 @@ export default function Foods() {
                 ))}
               </SelectContent>
             </Select>
-
-            <Button
-              variant="outline"
-              data-testid="button-upload-csv"
-              onClick={() => console.log('Upload CSV')}
-            >
-              <Upload className="w-4 h-4 mr-2" />
-              CSV
-            </Button>
 
             <Button
               variant="default"
