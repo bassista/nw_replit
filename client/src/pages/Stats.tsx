@@ -6,16 +6,29 @@ import { BarChart3, Award } from "lucide-react";
 import { useState, useEffect } from "react";
 import { format, subDays } from "date-fns";
 import { it } from "date-fns/locale";
-import { getDailyMeal, loadDailyMeals, loadSettings } from "@/lib/storage";
+import { 
+  getDailyMeal, 
+  loadDailyMeals, 
+  loadSettings,
+  loadBadges,
+  saveBadges,
+  checkSevenConsecutiveDays,
+  checkWaterGoalToday,
+  checkNutritionalGoalsSevenDays,
+  checkPerfectWeek,
+} from "@/lib/storage";
+import type { Badge } from "@shared/schema";
 
 export default function Stats() {
   const [activeTab, setActiveTab] = useState<"charts" | "badges">("charts");
   const [pieData, setPieData] = useState<any[]>([]);
   const [lineData, setLineData] = useState<any[]>([]);
+  const [badges, setBadges] = useState<Badge[]>([]);
 
   // Load and calculate real data
   useEffect(() => {
     const today = new Date();
+    const settings = loadSettings();
     
     // Calculate last 7 days data for line chart
     const dailyCalories: any[] = [];
@@ -51,36 +64,72 @@ export default function Stats() {
         { name: 'Grassi', value: 0 },
       ]);
     }
-  }, []);
 
-  const mockBadges = [
-    {
-      id: '1',
-      name: '7 Giorni Consecutivi',
-      description: 'Hai tracciato i tuoi pasti per 7 giorni di fila',
-      unlocked: true,
-      unlockedAt: new Date().toISOString(),
-    },
-    {
-      id: '2',
-      name: 'Obiettivo Acqua',
-      description: 'Hai raggiunto l\'obiettivo di idratazione',
-      unlocked: true,
-      unlockedAt: new Date(Date.now() - 86400000).toISOString(),
-    },
-    {
-      id: '3',
-      name: 'Maestro dei Nutrienti',
-      description: 'Raggiungi tutti gli obiettivi nutrizionali per 7 giorni',
-      unlocked: false,
-    },
-    {
-      id: '4',
-      name: 'Settimana Perfetta',
-      description: 'Ottieni un punteggio A+ per 7 giorni consecutivi',
-      unlocked: false,
-    },
-  ];
+    // Initialize or load badges
+    let loadedBadges = loadBadges();
+    if (loadedBadges.length === 0) {
+      loadedBadges = [
+        {
+          id: '1',
+          name: '7 Giorni Consecutivi',
+          description: 'Hai tracciato i tuoi pasti per 7 giorni di fila',
+          unlocked: false,
+        },
+        {
+          id: '2',
+          name: 'Obiettivo Acqua',
+          description: 'Hai raggiunto l\'obiettivo di idratazione',
+          unlocked: false,
+        },
+        {
+          id: '3',
+          name: 'Maestro dei Nutrienti',
+          description: 'Raggiungi tutti gli obiettivi nutrizionali per 7 giorni',
+          unlocked: false,
+        },
+        {
+          id: '4',
+          name: 'Settimana Perfetta',
+          description: 'Ottieni un punteggio A+ per 7 giorni consecutivi',
+          unlocked: false,
+        },
+      ];
+      saveBadges(loadedBadges);
+    }
+
+    // Calculate badge unlocking based on real data
+    const updatedBadges = loadedBadges.map(badge => {
+      if (badge.unlocked) return badge; // Already unlocked, don't change
+
+      let shouldUnlock = false;
+      
+      if (badge.id === '1' && checkSevenConsecutiveDays()) {
+        shouldUnlock = true;
+      } else if (badge.id === '2' && checkWaterGoalToday(settings)) {
+        shouldUnlock = true;
+      } else if (badge.id === '3' && checkNutritionalGoalsSevenDays(settings)) {
+        shouldUnlock = true;
+      } else if (badge.id === '4' && checkPerfectWeek(settings)) {
+        shouldUnlock = true;
+      }
+
+      if (shouldUnlock) {
+        return {
+          ...badge,
+          unlocked: true,
+          unlockedAt: new Date().toISOString(),
+        };
+      }
+      return badge;
+    });
+
+    // Save if any badges were unlocked
+    if (updatedBadges.some((b, i) => b.unlocked !== loadedBadges[i].unlocked)) {
+      saveBadges(updatedBadges);
+    }
+
+    setBadges(updatedBadges);
+  }, []);
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -120,7 +169,7 @@ export default function Stats() {
 
           <TabsContent value="badges" className="space-y-4 mt-4">
             <div className="grid gap-3">
-              {mockBadges.map(badge => (
+              {badges.map(badge => (
                 <BadgeCard key={badge.id} badge={badge} />
               ))}
             </div>

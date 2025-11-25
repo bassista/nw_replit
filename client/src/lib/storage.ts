@@ -1,4 +1,4 @@
-import type { FoodItem } from "@shared/schema";
+import type { FoodItem, Badge } from "@shared/schema";
 
 const STORAGE_KEYS = {
   foods: 'nutritrack_foods',
@@ -6,6 +6,7 @@ const STORAGE_KEYS = {
   shoppingLists: 'nutritrack_shopping_lists',
   settings: 'nutritrack_settings',
   categories: 'nutritrack_categories',
+  badges: 'nutritrack_badges',
 } as const;
 
 // Foods Storage
@@ -137,6 +138,113 @@ export function loadCategories(): string[] {
   return data ? JSON.parse(data) : ['Carboidrati', 'Frutta', 'Latticini', 'Proteine', 'Verdure'];
 }
 
+// Badge Storage
+export function saveBadges(badges: Badge[]) {
+  localStorage.setItem(STORAGE_KEYS.badges, JSON.stringify(badges));
+}
+
+export function loadBadges(): Badge[] {
+  const data = localStorage.getItem(STORAGE_KEYS.badges);
+  return data ? JSON.parse(data) : [];
+}
+
+export function unlockBadge(badgeId: string) {
+  const badges = loadBadges();
+  const badge = badges.find(b => b.id === badgeId);
+  if (badge && !badge.unlocked) {
+    badge.unlocked = true;
+    badge.unlockedAt = new Date().toISOString();
+    saveBadges(badges);
+  }
+}
+
+// Helper function to calculate daily meal score
+export function calculateDailyScore(dateKey: string, settings: Settings): string {
+  const meals = getDailyMeal(dateKey);
+  const totalCalories = meals.reduce((sum, item) => sum + item.calories, 0);
+  const totalProtein = meals.reduce((sum, item) => sum + item.protein, 0);
+  const totalCarbs = meals.reduce((sum, item) => sum + item.carbs, 0);
+  const totalFat = meals.reduce((sum, item) => sum + item.fat, 0);
+
+  const calorieScore = totalCalories > 0 ? totalCalories / settings.calorieGoal : 0;
+  const proteinScore = totalProtein > 0 ? totalProtein / settings.proteinGoal : 0;
+  const carbsScore = totalCarbs > 0 ? totalCarbs / settings.carbsGoal : 0;
+  const fatScore = totalFat > 0 ? totalFat / settings.fatGoal : 0;
+
+  const avgScore = (calorieScore + proteinScore + carbsScore + fatScore) / 4;
+
+  if (avgScore >= 0.95) return 'A+';
+  if (avgScore >= 0.9) return 'A';
+  if (avgScore >= 0.85) return 'A-';
+  if (avgScore >= 0.8) return 'B+';
+  if (avgScore >= 0.75) return 'B';
+  if (avgScore >= 0.7) return 'B-';
+  if (avgScore >= 0.6) return 'C+';
+  if (avgScore >= 0.5) return 'C';
+  if (avgScore >= 0.4) return 'C-';
+  if (avgScore >= 0.2) return 'D';
+  return 'F';
+}
+
+// Helper function to check 7 consecutive days
+export function checkSevenConsecutiveDays(): boolean {
+  const today = new Date();
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    const dateKey = date.toISOString().split('T')[0];
+    const meals = getDailyMeal(dateKey);
+    if (meals.length === 0) return false;
+  }
+  return true;
+}
+
+// Helper function to check water goal reached today
+export function checkWaterGoalToday(settings: Settings): boolean {
+  const today = new Date().toISOString().split('T')[0];
+  const waterToday = getWaterIntake(today);
+  return waterToday >= settings.waterTargetMl;
+}
+
+// Helper function to check all nutritional goals for 7 days
+export function checkNutritionalGoalsSevenDays(settings: Settings): boolean {
+  const today = new Date();
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    const dateKey = date.toISOString().split('T')[0];
+    const meals = getDailyMeal(dateKey);
+    
+    if (meals.length === 0) return false;
+    
+    const totalCalories = meals.reduce((sum, item) => sum + item.calories, 0);
+    const totalProtein = meals.reduce((sum, item) => sum + item.protein, 0);
+    const totalCarbs = meals.reduce((sum, item) => sum + item.carbs, 0);
+    const totalFat = meals.reduce((sum, item) => sum + item.fat, 0);
+
+    const calorieOk = totalCalories >= settings.calorieGoal * 0.9 && totalCalories <= settings.calorieGoal * 1.1;
+    const proteinOk = totalProtein >= settings.proteinGoal * 0.9 && totalProtein <= settings.proteinGoal * 1.1;
+    const carbsOk = totalCarbs >= settings.carbsGoal * 0.9 && totalCarbs <= settings.carbsGoal * 1.1;
+    const fatOk = totalFat >= settings.fatGoal * 0.9 && totalFat <= settings.fatGoal * 1.1;
+
+    if (!calorieOk || !proteinOk || !carbsOk || !fatOk) return false;
+  }
+  return true;
+}
+
+// Helper function to check perfect week (A+ for 7 days)
+export function checkPerfectWeek(settings: Settings): boolean {
+  const today = new Date();
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    const dateKey = date.toISOString().split('T')[0];
+    const score = calculateDailyScore(dateKey, settings);
+    if (score !== 'A+') return false;
+  }
+  return true;
+}
+
 // Export/Import all data
 export function exportAllData() {
   return {
@@ -145,6 +253,7 @@ export function exportAllData() {
     shoppingLists: loadShoppingLists(),
     settings: loadSettings(),
     categories: loadCategories(),
+    badges: loadBadges(),
     exportedAt: new Date().toISOString(),
   };
 }
@@ -155,6 +264,7 @@ export function importAllData(data: any) {
   if (data.shoppingLists) saveShoppingLists(data.shoppingLists);
   if (data.settings) saveSettings(data.settings);
   if (data.categories) saveCategories(data.categories);
+  if (data.badges) saveBadges(data.badges);
 }
 
 export function clearAllData() {
