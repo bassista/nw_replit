@@ -28,6 +28,7 @@ export default function Meals() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [mealToDelete, setMealToDelete] = useState<string | null>(null);
   const [selectedDayForMeal, setSelectedDayForMeal] = useState<number | null>(null);
+  const [draggedMealId, setDraggedMealId] = useState<string | undefined>();
 
   useEffect(() => {
     const loadedFoods = loadFoods();
@@ -71,6 +72,19 @@ export default function Meals() {
   const handleRemoveMealFromDay = (dayOfWeek: number) => {
     removeMealFromDay(dayOfWeek);
     setAssignments(loadWeeklyAssignments());
+  };
+
+  const handleMealDragStart = (mealId: string, mealName: string, e: React.DragEvent<HTMLDivElement>) => {
+    setDraggedMealId(mealId);
+    e.dataTransfer.setData('mealId', mealId);
+    e.dataTransfer.setData('mealName', mealName);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDropOnCalendarDay = (dayOfWeek: number, mealId: string, mealName: string) => {
+    assignMealToDay(dayOfWeek, mealId, mealName);
+    setAssignments(loadWeeklyAssignments());
+    setDraggedMealId(undefined);
   };
 
   const handleGenerateShoppingList = () => {
@@ -144,19 +158,28 @@ export default function Meals() {
 
             <div className="space-y-3">
               {meals.length > 0 ? (
-                meals.map(meal => (
-                  <MealCard 
-                    key={meal.id}
-                    meal={meal}
-                    onToggleFavorite={handleToggleFavorite}
-                    onAddToShoppingList={() => console.log('TODO: Add to shopping list')}
-                    onAddToCalendar={(id) => {
-                      const meal = meals.find(m => m.id === id);
-                      if (meal) handleAssignMealToDay(0, meal);
-                    }}
-                    onClick={(id) => console.log('View meal:', id)}
-                  />
-                ))
+                <>
+                  <div className="p-3 bg-primary/5 rounded-md border border-primary/20">
+                    <p className="text-xs text-primary font-medium text-center">
+                      💡 Trascina un pasto sul calendario per assegnarlo
+                    </p>
+                  </div>
+                  {meals.map(meal => (
+                    <MealCard 
+                      key={meal.id}
+                      meal={meal}
+                      isDragging={draggedMealId === meal.id}
+                      onToggleFavorite={handleToggleFavorite}
+                      onAddToShoppingList={() => console.log('TODO: Add to shopping list')}
+                      onAddToCalendar={(id) => {
+                        const meal = meals.find(m => m.id === id);
+                        if (meal) handleAssignMealToDay(0, meal);
+                      }}
+                      onClick={(id) => console.log('View meal:', id)}
+                      onDragStart={handleMealDragStart}
+                    />
+                  ))}
+                </>
               ) : (
                 <div className="text-center py-12">
                   <p className="text-muted-foreground">Nessun pasto creato. Inizia creando il primo pasto!</p>
@@ -171,6 +194,8 @@ export default function Meals() {
               assignments={assignments}
               onDayClick={handleDayClick}
               onRemoveMeal={handleRemoveMealFromDay}
+              onDropMeal={handleDropOnCalendarDay}
+              draggedMealId={draggedMealId}
             />
 
             {selectedDayForMeal !== null && (
@@ -210,10 +235,17 @@ export default function Meals() {
               Genera Lista Spesa Settimanale
             </Button>
 
-            <div className="p-4 bg-muted/50 rounded-md">
-              <p className="text-sm text-muted-foreground text-center">
-                Clicca sui giorni per assegnare i pasti oppure rimuovi i pasti esistenti
-              </p>
+            <div className="space-y-3">
+              <div className="p-4 bg-primary/5 rounded-md border border-primary/20">
+                <p className="text-sm text-primary font-medium text-center">
+                  ✨ Vai al tab "I Miei Pasti" e trascina i pasti qui!
+                </p>
+              </div>
+              <div className="p-4 bg-muted/50 rounded-md">
+                <p className="text-sm text-muted-foreground text-center">
+                  Puoi anche cliccare sui giorni per selezionare i pasti o rimuovere quelli esistenti
+                </p>
+              </div>
             </div>
           </TabsContent>
         </Tabs>

@@ -12,11 +12,31 @@ interface WeeklyCalendarProps {
   }[];
   onDayClick: (dayOfWeek: number) => void;
   onRemoveMeal?: (dayOfWeek: number) => void;
+  onDropMeal?: (dayOfWeek: number, mealId: string, mealName: string) => void;
+  draggedMealId?: string;
 }
 
 const dayNames = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
 
-export default function WeeklyCalendar({ weekStart, assignments, onDayClick, onRemoveMeal }: WeeklyCalendarProps) {
+export default function WeeklyCalendar({ weekStart, assignments, onDayClick, onRemoveMeal, onDropMeal, draggedMealId }: WeeklyCalendarProps) {
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.currentTarget.classList.add('bg-primary/20');
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.currentTarget.classList.remove('bg-primary/20');
+  };
+
+  const handleDrop = (dayOfWeek: number, e: React.DragEvent) => {
+    e.preventDefault();
+    e.currentTarget.classList.remove('bg-primary/20');
+    const mealId = e.dataTransfer.getData('mealId');
+    const mealName = e.dataTransfer.getData('mealName');
+    if (mealId && mealName && onDropMeal) {
+      onDropMeal(dayOfWeek, mealId, mealName);
+    }
+  };
   const days = Array.from({ length: 7 }, (_, i) => {
     const date = addDays(startOfWeek(weekStart, { weekStartsOn: 0 }), i);
     const assignment = assignments.find(a => a.dayOfWeek === i);
@@ -34,13 +54,19 @@ export default function WeeklyCalendar({ weekStart, assignments, onDayClick, onR
       <h3 className="font-semibold text-foreground mb-4">Calendario Settimanale</h3>
       <div className="grid grid-cols-7 gap-2">
         {days.map((day) => (
-          <div key={day.dayOfWeek} className="relative">
+          <div 
+            key={day.dayOfWeek} 
+            className="relative"
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleDrop(day.dayOfWeek, e)}
+          >
             <button
               onClick={() => onDayClick(day.dayOfWeek)}
-              className={`w-full p-2 rounded-md text-center hover-elevate active-elevate-2 ${
+              className={`w-full p-2 rounded-md text-center hover-elevate active-elevate-2 transition-colors ${
                 day.assignment?.mealId 
                   ? 'bg-primary/10 border-2 border-primary' 
-                  : 'bg-muted border-2 border-transparent'
+                  : 'bg-muted border-2 border-dashed border-muted-foreground/30'
               }`}
               data-testid={`calendar-day-${day.dayOfWeek}`}
             >

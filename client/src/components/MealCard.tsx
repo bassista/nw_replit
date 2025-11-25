@@ -18,6 +18,8 @@ interface MealCardProps {
   onAddToShoppingList?: (id: string) => void;
   onAddToCalendar?: (id: string) => void;
   onClick?: (id: string) => void;
+  onDragStart?: (mealId: string, mealName: string, e: React.DragEvent<HTMLDivElement>) => void;
+  isDragging?: boolean;
 }
 
 export default function MealCard({ 
@@ -25,13 +27,17 @@ export default function MealCard({
   onToggleFavorite, 
   onAddToShoppingList,
   onAddToCalendar,
-  onClick 
+  onClick,
+  onDragStart,
+  isDragging
 }: MealCardProps) {
   return (
     <Card 
-      className="p-4 hover-elevate cursor-pointer"
+      className={`p-4 hover-elevate cursor-grab active:cursor-grabbing transition-opacity ${isDragging ? 'opacity-50' : 'opacity-100'}`}
       onClick={() => onClick?.(meal.id)}
       data-testid={`card-meal-${meal.id}`}
+      draggable
+      onDragStart={(e) => onDragStart?.(meal.id, meal.name, e)}
     >
       <div className="space-y-3">
         <div className="flex items-start justify-between gap-3">
