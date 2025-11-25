@@ -11,6 +11,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Calendar, ChevronLeft, ChevronRight, Plus, Trash2, Search, Edit } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -34,6 +43,7 @@ export default function Home() {
   const [selectedFoodForQuantity, setSelectedFoodForQuantity] = useState<FoodItem | null>(null);
   const [selectedQuantity, setSelectedQuantity] = useState(100);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   const { t } = useLanguage();
 
   const dateKey = format(currentDate, 'yyyy-MM-dd');
@@ -225,7 +235,7 @@ export default function Home() {
                       variant="ghost"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setDailyMealItems(prev => prev.filter(i => i.id !== item.id));
+                        setItemToDelete(item.id);
                       }}
                       data-testid={`button-remove-${item.id}`}
                     >
@@ -303,6 +313,33 @@ export default function Home() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!itemToDelete} onOpenChange={(open) => !open && setItemToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Elimina Alimento</AlertDialogTitle>
+            <AlertDialogDescription>
+              Sei sicuro di voler eliminare questo alimento dal diario? Questa azione non può essere annullata.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex gap-3">
+            <AlertDialogCancel className="flex-1">Annulla</AlertDialogCancel>
+            <AlertDialogAction
+              className="flex-1"
+              onClick={() => {
+                if (itemToDelete) {
+                  setDailyMealItems(prev => prev.filter(i => i.id !== itemToDelete));
+                  setItemToDelete(null);
+                }
+              }}
+              data-testid="button-confirm-delete"
+            >
+              Elimina
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Quantity Dialog */}
       <Dialog open={showQuantityDialog} onOpenChange={setShowQuantityDialog}>
