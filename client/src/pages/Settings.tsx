@@ -121,18 +121,33 @@ export default function Settings() {
 
   const handleLoadDefaultFoods = async () => {
     try {
+      console.log('Starting to fetch all_foods.csv...');
       const response = await fetch('/all_foods.csv');
+      console.log('Fetch response status:', response.status);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const csvText = await response.text();
-      await importFoodsFromCSV(csvText);
+      console.log('CSV text length:', csvText.length);
+      console.log('First 200 chars:', csvText.substring(0, 200));
+      
+      const foods = importFoodsFromCSV(csvText);
+      console.log('Imported foods count:', foods.length);
+      
+      saveFoods(foods);
+      console.log('Foods saved successfully');
+      
       toast({
         title: language === 'it' ? 'Caricamento completato' : 'Load successful',
-        description: language === 'it' ? 'I cibi sono stati caricati nell\'app.' : 'Foods have been loaded into the app.',
+        description: language === 'it' ? `${foods.length} cibi sono stati caricati nell'app.` : `${foods.length} foods have been loaded into the app.`,
       });
     } catch (error) {
       console.error('Error loading default foods:', error);
       toast({
         title: language === 'it' ? 'Errore nel caricamento' : 'Load error',
-        description: language === 'it' ? 'Si è verificato un errore durante il caricamento dei cibi.' : 'An error occurred while loading foods.',
+        description: language === 'it' ? `Si è verificato un errore: ${error}` : `An error occurred: ${error}`,
         variant: "destructive",
       });
     }

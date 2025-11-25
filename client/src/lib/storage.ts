@@ -31,6 +31,8 @@ export type {
 // Foods Storage
 export function saveFoods(foods: FoodItem[]) {
   useAppStore.setState({ foods });
+  // Save to localStorage immediately
+  useAppStore.getState().saveState();
 }
 
 export function loadFoods(): FoodItem[] {
