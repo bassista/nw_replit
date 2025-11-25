@@ -53,6 +53,7 @@ export default function Home() {
   const [showCopyFromPastDialog, setShowCopyFromPastDialog] = useState(false);
   const [daysBackInput, setDaysBackInput] = useState('1');
   const [showClearDayConfirm, setShowClearDayConfirm] = useState(false);
+  const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
   const { t } = useLanguage();
 
   const dateKey = format(currentDate, 'yyyy-MM-dd');
@@ -251,6 +252,40 @@ export default function Home() {
     setShowClearDayConfirm(false);
   };
 
+  const handleDragStart = (itemId: string, e: React.DragEvent<HTMLDivElement>) => {
+    setDraggedItemId(itemId);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.currentTarget.style.opacity = '0.7';
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.currentTarget.style.opacity = '1';
+  };
+
+  const handleDrop = (targetIndex: number, e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.currentTarget.style.opacity = '1';
+    
+    if (!draggedItemId) return;
+    
+    const draggedIndex = dailyMealItems.findIndex(item => item.id === draggedItemId);
+    if (draggedIndex === -1 || draggedIndex === targetIndex) {
+      setDraggedItemId(null);
+      return;
+    }
+    
+    // Reorder items
+    const newItems = [...dailyMealItems];
+    const [draggedItem] = newItems.splice(draggedIndex, 1);
+    newItems.splice(targetIndex, 0, draggedItem);
+    setDailyMealItems(newItems);
+    setDraggedItemId(null);
+  };
+
   const filteredFoods = availableFoods.filter(food =>
     food.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -431,10 +466,17 @@ export default function Home() {
 
           <div className="divide-y divide-card-border">
             {dailyMealItems.length > 0 ? (
-              dailyMealItems.map((item) => (
+              dailyMealItems.map((item, index) => (
                 <div 
                   key={item.id} 
-                  className="p-4 flex items-center justify-between hover-elevate cursor-pointer"
+                  draggable
+                  onDragStart={(e) => handleDragStart(item.id, e)}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(index, e)}
+                  className={`p-4 flex items-center justify-between cursor-move transition-opacity ${
+                    draggedItemId === item.id ? 'opacity-50' : ''
+                  }`}
                   onClick={() => handleEditQuantity(item)}
                   data-testid={`daily-item-${item.id}`}
                 >

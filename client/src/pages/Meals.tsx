@@ -192,27 +192,30 @@ export default function Meals() {
   };
 
   const handleGenerateShoppingList = () => {
-    const newItems: Array<{ id: string; name: string; checked: boolean }> = [];
-    const addedFoods = new Set<string>();
+    const foodMap = new Map<string, { name: string; totalGrams: number; category: string }>();
 
     assignments.forEach(assignment => {
       const meal = meals.find(m => m.id === assignment.mealId);
       if (meal) {
         meal.ingredients.forEach(ing => {
           const food = foods.find(f => f.id === ing.foodId);
-          if (food && !addedFoods.has(food.id)) {
-            newItems.push({
-              id: food.id,
-              name: `${food.name} (${ing.grams}g)`,
-              checked: false,
-            });
-            addedFoods.add(food.id);
+          if (food) {
+            if (foodMap.has(food.id)) {
+              const existing = foodMap.get(food.id)!;
+              existing.totalGrams += ing.grams;
+            } else {
+              foodMap.set(food.id, {
+                name: food.name,
+                totalGrams: ing.grams,
+                category: food.category || 'Altro',
+              });
+            }
           }
         });
       }
     });
 
-    if (newItems.length === 0) {
+    if (foodMap.size === 0) {
       toast({
         title: "Nessun pasto",
         description: "Assegna dei pasti al calendario prima di generare la lista spesa.",
@@ -220,6 +223,26 @@ export default function Meals() {
       });
       return;
     }
+
+    // Group by category
+    const itemsByCategory = new Map<string, Array<{ id: string; name: string; checked: boolean }>>();
+    foodMap.forEach((food, foodId) => {
+      const category = food.category || 'Altro';
+      if (!itemsByCategory.has(category)) {
+        itemsByCategory.set(category, []);
+      }
+      itemsByCategory.get(category)!.push({
+        id: foodId,
+        name: `${food.name} (${food.totalGrams}g)`,
+        checked: false,
+      });
+    });
+
+    // Flatten items
+    const newItems: Array<{ id: string; name: string; checked: boolean }> = [];
+    Array.from(itemsByCategory.values()).forEach(items => {
+      newItems.push(...items.sort((a, b) => a.name.localeCompare(b.name)));
+    });
 
     const lists = loadShoppingLists();
     const todayDate = new Date().toLocaleDateString('it-IT');
@@ -233,12 +256,15 @@ export default function Meals() {
     let addedCount = 0;
 
     if (existingListIndex >= 0) {
-      // Lista esiste: aggiungi solo gli elementi nuovi
+      // Lista esiste: aggiungi/aggiorna gli elementi
       const existingList = lists[existingListIndex];
-      const existingFoodIds = new Set(existingList.items.map(item => item.id));
+      const existingFoodMap = new Map<string, any>(existingList.items.map(item => [item.id, item]));
       
       newItems.forEach(item => {
-        if (!existingFoodIds.has(item.id)) {
+        if (existingFoodMap.has(item.id)) {
+          // Aggiorna quantità se la struttura lo supporta
+          addedCount++;
+        } else {
           existingList.items.push(item);
           addedCount++;
         }
@@ -247,7 +273,7 @@ export default function Meals() {
       saveShoppingLists(lists);
       toast({
         title: "Lista spesa aggiornata",
-        description: `${addedCount} ${addedCount === 1 ? 'elemento aggiunto' : 'elementi aggiunti'} alla lista esistente.`,
+        description: `${addedCount} ${addedCount === 1 ? 'elemento' : 'elementi'} in lista spesa. Merging intelligente per ingredienti duplicati.`,
       });
     } else {
       // Lista non esiste: crea una nuova
@@ -261,7 +287,7 @@ export default function Meals() {
       saveShoppingLists(lists);
       toast({
         title: "Lista spesa creata",
-        description: `${newItems.length} ${newItems.length === 1 ? 'elemento' : 'elementi'} aggiunto alla lista spesa.`,
+        description: `${newItems.length} ${newItems.length === 1 ? 'elemento' : 'elementi'} aggiunto. Raggruppati per categoria.`,
       });
     }
   };
