@@ -282,7 +282,7 @@ export default function ShoppingLists() {
 
       {/* Dialog for Add Item or New List */}
       <Dialog open={showNewListDialog} onOpenChange={setShowNewListDialog}>
-        <DialogContent className="max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>
               {selectedListForItem 
