@@ -345,33 +345,35 @@ export default function Meals() {
 
         {/* Weekly Calendar */}
         {showCalendar && (
-          <WeeklyCalendar 
-            weekStart={new Date()}
-            assignments={assignments}
-            onDayClick={handleDayClick}
-            onRemoveMeal={handleRemoveMealFromDay}
-            onDropMeal={handleDropOnCalendarDay}
-            draggedMealId={draggedMealId}
-          />
+          <>
+            <WeeklyCalendar 
+              weekStart={new Date()}
+              assignments={assignments}
+              onDayClick={handleDayClick}
+              onRemoveMeal={handleRemoveMealFromDay}
+              onDropMeal={handleDropOnCalendarDay}
+              draggedMealId={draggedMealId}
+            />
+
+            {/* Generate Shopping List Button */}
+            <Button
+              variant="outline"
+              className="w-full"
+              data-testid="button-generate-shopping-list"
+              onClick={handleGenerateShoppingList}
+            >
+              <ShoppingCart className="w-4 h-4 mr-2" />
+              Genera Lista Spesa Settimanale
+            </Button>
+
+            {/* Drag & Drop Suggestion */}
+            <div className="p-3 bg-primary/5 rounded-md border border-primary/20">
+              <p className="text-xs text-primary font-medium text-center">
+                💡 Trascina un pasto sul calendario per assegnarlo, o clicca su un giorno per selezionare
+              </p>
+            </div>
+          </>
         )}
-
-        {/* Generate Shopping List Button */}
-        <Button
-          variant="outline"
-          className="w-full"
-          data-testid="button-generate-shopping-list"
-          onClick={handleGenerateShoppingList}
-        >
-          <ShoppingCart className="w-4 h-4 mr-2" />
-          Genera Lista Spesa Settimanale
-        </Button>
-
-        {/* Drag & Drop Suggestion */}
-        <div className="p-3 bg-primary/5 rounded-md border border-primary/20">
-          <p className="text-xs text-primary font-medium text-center">
-            💡 Trascina un pasto sul calendario per assegnarlo, o clicca su un giorno per selezionare
-          </p>
-        </div>
 
         {/* Search Bar */}
         <div className="relative">
