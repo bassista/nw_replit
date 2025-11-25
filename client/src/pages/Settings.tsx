@@ -34,8 +34,10 @@ import { useState, useEffect } from "react";
 import { useLanguage } from "@/lib/languageContext";
 import type { Language } from "@/lib/i18n";
 import { loadSettings, saveSettings, loadCategories, saveCategories, exportAllData, importAllData, clearAllData, exportFoodsAsCSV, importFoodsFromCSV, saveFoods } from "@/lib/storage";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Settings() {
+  const { toast } = useToast();
   const { language, setLanguage, t } = useLanguage();
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [showCategoryDialog, setShowCategoryDialog] = useState(false);
@@ -122,15 +124,26 @@ export default function Settings() {
           const csvContent = event.target?.result as string;
           const foods = importFoodsFromCSV(csvContent);
           if (foods.length === 0) {
-            alert(language === 'it' ? 'Nessun alimento trovato nel file' : 'No foods found in file');
+            toast({
+              title: language === 'it' ? 'Nessun alimento trovato' : 'No foods found',
+              description: language === 'it' ? 'Il file CSV non contiene alimenti validi.' : 'The CSV file does not contain valid foods.',
+              variant: "destructive",
+            });
             return;
           }
           saveFoods(foods);
-          alert(language === 'it' ? `${foods.length} alimenti importati con successo!` : `${foods.length} foods imported successfully!`);
+          toast({
+            title: language === 'it' ? 'Importazione completata' : 'Import successful',
+            description: language === 'it' ? `${foods.length} ${foods.length === 1 ? 'alimento' : 'alimenti'} importati con successo.` : `${foods.length} ${foods.length === 1 ? 'food' : 'foods'} imported successfully.`,
+          });
           window.location.reload();
         } catch (error) {
           console.error('Error importing foods:', error);
-          alert(language === 'it' ? 'Errore nell\'importazione del CSV' : 'Error importing CSV file');
+          toast({
+            title: language === 'it' ? 'Errore nell\'importazione' : 'Import error',
+            description: language === 'it' ? 'Si è verificato un errore durante il caricamento del file CSV.' : 'An error occurred while importing the CSV file.',
+            variant: "destructive",
+          });
         }
       };
       reader.readAsText(file);
