@@ -361,8 +361,6 @@ function parseCSVLine(line: string): string[] {
 // CSV Import for Foods
 export function importFoodsFromCSV(csv: string): FoodItem[] {
   const lines = csv.trim().split('\n');
-  console.log('CSV lines:', lines.length);
-  console.log('First line (header):', lines[0]);
   
   if (lines.length < 2) {
     throw new Error('CSV file is empty or invalid');
@@ -374,11 +372,9 @@ export function importFoodsFromCSV(csv: string): FoodItem[] {
     if (!line.trim()) continue; // Skip empty lines
     
     const fields = parseCSVLine(line);
-    console.log(`Row ${i} fields:`, fields.length, fields);
 
     try {
       if (fields.length < 10) {
-        console.warn(`Row ${i} has insufficient fields:`, fields.length);
         continue;
       }
 
@@ -430,14 +426,12 @@ export function importFoodsFromCSV(csv: string): FoodItem[] {
         isFavorite: false,
       };
 
-      console.log('Parsed food:', food);
       foods.push(food);
     } catch (error) {
-      console.error(`Failed to parse row ${i}:`, error);
+      // Skip rows with parsing errors
     }
   }
 
-  console.log('Total foods parsed:', foods.length);
   if (foods.length === 0) {
     throw new Error('No valid foods found in CSV file');
   }

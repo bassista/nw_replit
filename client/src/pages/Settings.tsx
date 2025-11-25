@@ -80,6 +80,8 @@ export default function Settings() {
         try {
           const jsonString = event.target?.result as string;
           await importAllData(jsonString);
+          // Force immediate save to localStorage before reload
+          await useAppStore.getState().saveState();
           toast({
             title: language === 'it' ? 'Importazione completata' : 'Import successful',
             description: language === 'it' ? 'I tuoi dati sono stati ripristinati. Pagina ricaricata.' : 'Your data has been restored. Page reloaded.',
