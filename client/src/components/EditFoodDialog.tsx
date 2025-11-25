@@ -53,6 +53,13 @@ export default function EditFoodDialog({
     }
   );
 
+  // Update formData when food changes
+  React.useEffect(() => {
+    if (food) {
+      setFormData(food);
+    }
+  }, [food, open]);
+
   const handleSave = () => {
     onSave(formData);
     onClose();

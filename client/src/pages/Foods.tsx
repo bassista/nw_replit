@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Upload, Heart } from "lucide-react";
+import { Search, Upload, Heart, Plus } from "lucide-react";
 import { useState, useEffect } from "react";
 import type { FoodItem } from "@shared/schema";
 import { useLanguage } from "@/lib/languageContext";
@@ -70,6 +70,32 @@ export default function Foods() {
     setFoods(prev => prev.filter(f => f.id !== id));
   };
 
+  const handleToggleFavorite = (id: string) => {
+    setFoods(prev => prev.map(f => 
+      f.id === id ? { ...f, isFavorite: !f.isFavorite } : f
+    ));
+  };
+
+  const handleAddNewFood = () => {
+    const newFood: FoodItem = {
+      id: Date.now().toString(),
+      name: '',
+      category: categories[0] || 'Proteine',
+      calories: 0,
+      protein: 0,
+      carbs: 0,
+      fat: 0,
+      fiber: 0,
+      isFavorite: false,
+    };
+    setEditingFood(newFood);
+    setDialogOpen(true);
+  };
+
+  const handleConfirmNewFood = (food: FoodItem) => {
+    setFoods(prev => [...prev, food]);
+  };
+
   return (
     <div className="min-h-screen bg-background pb-20">
       <TopBar 
@@ -93,7 +119,7 @@ export default function Foods() {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
               <SelectTrigger data-testid="select-category-filter">
                 <SelectValue placeholder={t.foods.category} />
@@ -113,6 +139,15 @@ export default function Foods() {
             >
               <Upload className="w-4 h-4 mr-2" />
               CSV
+            </Button>
+
+            <Button
+              variant="default"
+              data-testid="button-add-food"
+              onClick={handleAddNewFood}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              {t.common.add}
             </Button>
           </div>
         </div>
@@ -137,8 +172,7 @@ export default function Foods() {
               <FoodCard 
                 key={food.id}
                 food={food}
-                onToggleFavorite={(id) => console.log('Toggle favorite:', id)}
-                onAdd={(id) => console.log('Add food:', id)}
+                onToggleFavorite={handleToggleFavorite}
                 onClick={(id) => {
                   setEditingFood(food);
                   setDialogOpen(true);
