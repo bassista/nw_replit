@@ -19,14 +19,17 @@ import type { FoodItem } from "@shared/schema";
 export default function ShoppingLists() {
   const { t, language } = useLanguage();
   const [showNewListDialog, setShowNewListDialog] = useState(false);
+  const [showRenameDialog, setShowRenameDialog] = useState(false);
   const [newListName, setNewListName] = useState('');
   const [newItemName, setNewItemName] = useState('');
   const [selectedListForItem, setSelectedListForItem] = useState<string | null>(null);
+  const [selectedListForRename, setSelectedListForRename] = useState<string | null>(null);
   const [lists, setLists] = useState<any[]>([]);
   const [foods, setFoods] = useState<FoodItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<"all" | "favorites">("all");
   const [itemMode, setItemMode] = useState<"food" | "custom">("food");
+  const [draggedListId, setDraggedListId] = useState<string | undefined>();
 
   // Load data on mount
   useEffect(() => {
@@ -180,6 +183,59 @@ export default function ShoppingLists() {
     }
   };
 
+  const handleRenameList = (listId: string) => {
+    const list = lists.find(l => l.id === listId);
+    if (list) {
+      setSelectedListForRename(listId);
+      setNewListName(list.name);
+      setShowRenameDialog(true);
+    }
+  };
+
+  const handleConfirmRename = () => {
+    if (newListName.trim() && selectedListForRename) {
+      setLists(prev => prev.map(list => 
+        list.id === selectedListForRename 
+          ? { ...list, name: newListName }
+          : list
+      ));
+      setNewListName('');
+      setSelectedListForRename(null);
+      setShowRenameDialog(false);
+    }
+  };
+
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, listId: string) => {
+    setDraggedListId(listId);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDropList = (e: React.DragEvent<HTMLDivElement>, targetListId: string) => {
+    e.preventDefault();
+    if (!draggedListId || draggedListId === targetListId) return;
+
+    const draggedIndex = lists.findIndex(l => l.id === draggedListId);
+    const targetIndex = lists.findIndex(l => l.id === targetListId);
+
+    if (draggedIndex === -1 || targetIndex === -1) return;
+
+    const newLists = [...lists];
+    const [draggedList] = newLists.splice(draggedIndex, 1);
+    newLists.splice(targetIndex, 0, draggedList);
+    
+    setLists(newLists);
+    setDraggedListId(undefined);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedListId(undefined);
+  };
+
   return (
     <div className="min-h-screen bg-background pb-20">
       <TopBar 
@@ -203,15 +259,23 @@ export default function ShoppingLists() {
 
         <div className="space-y-4">
           {lists.map(list => (
-            <ShoppingListCard 
+            <div
               key={list.id}
-              list={list}
-              onToggleItem={handleToggleItem}
-              onDeleteItem={handleDeleteItem}
-              onDeleteList={handleDeleteList}
-              onAddItem={handleAddItem}
-              onToggleAll={handleToggleAll}
-            />
+              onDragOver={handleDragOver}
+              onDrop={(e) => handleDropList(e, list.id)}
+            >
+              <ShoppingListCard 
+                list={list}
+                onToggleItem={handleToggleItem}
+                onDeleteItem={handleDeleteItem}
+                onDeleteList={handleDeleteList}
+                onAddItem={handleAddItem}
+                onToggleAll={handleToggleAll}
+                onRenameList={handleRenameList}
+                onDragStart={handleDragStart}
+                isDragging={draggedListId === list.id}
+              />
+            </div>
           ))}
         </div>
       </div>
@@ -346,6 +410,36 @@ export default function ShoppingLists() {
               </DialogFooter>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Rename List Dialog */}
+      <Dialog open={showRenameDialog} onOpenChange={setShowRenameDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{language === 'it' ? 'Rinomina Lista' : 'Rename List'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input
+              placeholder={language === 'it' ? 'Nome lista...' : 'List name...'}
+              value={newListName}
+              onChange={(e) => setNewListName(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleConfirmRename()}
+              data-testid="input-rename-list"
+              autoFocus
+            />
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowRenameDialog(false)}>
+                {t.foods.cancel}
+              </Button>
+              <Button 
+                onClick={handleConfirmRename}
+                data-testid="button-confirm-rename"
+              >
+                {language === 'it' ? 'Rinomina' : 'Rename'}
+              </Button>
+            </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
