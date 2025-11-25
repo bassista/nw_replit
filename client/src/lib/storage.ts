@@ -49,6 +49,18 @@ export function getDailyMeal(date: string): DailyMeal['items'] {
   return meals.find(m => m.date === date)?.items || [];
 }
 
+// Water Intake Storage
+export function saveWaterIntake(date: string, ml: number) {
+  const waterKey = `nutritrack_water_${date}`;
+  localStorage.setItem(waterKey, ml.toString());
+}
+
+export function getWaterIntake(date: string): number {
+  const waterKey = `nutritrack_water_${date}`;
+  const data = localStorage.getItem(waterKey);
+  return data ? parseInt(data) : 0;
+}
+
 // Shopping Lists Storage
 export interface ShoppingList {
   id: string;

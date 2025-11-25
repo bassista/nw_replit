@@ -5,32 +5,67 @@ import MealScoreCard from "@/components/MealScoreCard";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Calendar, ChevronLeft, ChevronRight, Plus, Trash2, Search } from "lucide-react";
 import { useState, useEffect } from "react";
 import { format, addDays, subDays } from "date-fns";
 import { it } from "date-fns/locale";
 import { useLanguage } from "@/lib/languageContext";
-import { getDailyMeal, saveDailyMeal, loadSettings } from "@/lib/storage";
+import { getDailyMeal, saveDailyMeal, loadSettings, getWaterIntake, saveWaterIntake, loadFoods } from "@/lib/storage";
+import type { FoodItem } from "@shared/schema";
 
 export default function Home() {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [waterMl, setWaterMl] = useState(1200);
+  const [waterMl, setWaterMl] = useState(0);
   const [dailyMealItems, setDailyMealItems] = useState<Array<{ id: string; name: string; calories: number; grams: number }>>([]);
   const [settings, setSettings] = useState(loadSettings());
+  const [showAddFoodDialog, setShowAddFoodDialog] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [availableFoods, setAvailableFoods] = useState<FoodItem[]>([]);
   const { t } = useLanguage();
 
   const dateKey = format(currentDate, 'yyyy-MM-dd');
 
-  // Load daily meal when date changes
+  // Load data when date changes
   useEffect(() => {
     const items = getDailyMeal(dateKey);
+    const water = getWaterIntake(dateKey);
     setDailyMealItems(items);
+    setWaterMl(water);
+    setAvailableFoods(loadFoods());
   }, [dateKey]);
 
   // Save daily meal when items change
   useEffect(() => {
     saveDailyMeal(dateKey, dailyMealItems);
   }, [dailyMealItems, dateKey]);
+
+  // Save water intake when it changes
+  useEffect(() => {
+    saveWaterIntake(dateKey, waterMl);
+  }, [waterMl, dateKey]);
+
+  const handleAddFood = (food: FoodItem) => {
+    const newItem = {
+      id: Date.now().toString(),
+      name: food.name,
+      calories: food.calories,
+      grams: 100,
+    };
+    setDailyMealItems(prev => [...prev, newItem]);
+    setShowAddFoodDialog(false);
+    setSearchQuery('');
+  };
+
+  const filteredFoods = availableFoods.filter(food =>
+    food.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   // Calculate nutrients from daily meal
   const calculateNutrients = () => {
@@ -99,9 +134,9 @@ export default function Home() {
         {/* Water Tracker */}
         <WaterTracker 
           mlConsumed={waterMl}
-          targetMl={2000}
-          glassCapacityMl={200}
-          onAddGlass={() => setWaterMl(prev => prev + 200)}
+          targetMl={settings.waterTargetMl}
+          glassCapacityMl={settings.glassCapacityMl}
+          onAddGlass={() => setWaterMl(prev => prev + settings.glassCapacityMl)}
         />
 
         {/* Daily Meal Section */}
@@ -147,7 +182,7 @@ export default function Home() {
 
           <div className="p-4 border-t border-card-border">
             <Button
-              onClick={() => console.log('Add food to daily meal')}
+              onClick={() => setShowAddFoodDialog(true)}
               variant="default"
               className="w-full"
               data-testid="button-add-daily-food"
@@ -158,6 +193,55 @@ export default function Home() {
           </div>
         </Card>
       </div>
+
+      {/* Add Food Dialog */}
+      <Dialog open={showAddFoodDialog} onOpenChange={setShowAddFoodDialog}>
+        <DialogContent className="max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{t.diary.addFood}</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder={t.foods.search}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+                data-testid="input-search-add-food"
+              />
+            </div>
+
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {filteredFoods.length > 0 ? (
+                filteredFoods.map(food => (
+                  <button
+                    key={food.id}
+                    onClick={() => handleAddFood(food)}
+                    className="w-full text-left p-3 rounded-md border border-card-border hover-elevate"
+                    data-testid={`food-option-${food.id}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-foreground">{food.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {food.category} • {food.calories} kcal
+                        </p>
+                      </div>
+                      <Plus className="w-4 h-4 text-primary" />
+                    </div>
+                  </button>
+                ))
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  {t.foods.noFoodsFound}
+                </div>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
