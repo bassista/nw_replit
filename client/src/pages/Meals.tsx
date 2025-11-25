@@ -21,9 +21,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Heart, ShoppingCart, Trash2, Search } from "lucide-react";
+import { Plus, Heart, ShoppingCart, Trash2, Search, ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
+import { addDays, subDays, startOfWeek, format, isSameWeek } from "date-fns";
+import { it } from "date-fns/locale";
 import { loadFoods, loadMeals, saveMeals, loadWeeklyAssignments, assignMealToDay, removeMealFromDay, calculateMealNutrition, saveShoppingLists, loadShoppingLists, saveDailyMeal, getDailyMeal } from "@/lib/storage";
 import { useToast } from "@/hooks/use-toast";
 import type { Meal, DailyMealItem } from "@/lib/storage";
@@ -44,6 +46,7 @@ export default function Meals() {
   const [mealToEdit, setMealToEdit] = useState<Meal | null>(null);
   const [mealToAssignToDay, setMealToAssignToDay] = useState<Meal | null>(null);
   const [showDaySelector, setShowDaySelector] = useState(false);
+  const [currentWeekStart, setCurrentWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 0 }));
 
   useEffect(() => {
     const loadedFoods = loadFoods();
@@ -343,11 +346,53 @@ export default function Meals() {
           </Button>
         </div>
 
+        {/* Week Navigation */}
+        {showCalendar && (
+          <div className="flex items-center justify-between gap-3 bg-muted/30 p-3 rounded-lg border border-muted">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setCurrentWeekStart(prev => subDays(prev, 7))}
+              data-testid="button-prev-week"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            
+            <div className="flex-1 text-center">
+              <div className="flex items-center justify-center gap-2 text-sm font-medium text-foreground">
+                <Calendar className="w-4 h-4 text-primary" />
+                <span>
+                  {format(currentWeekStart, "d MMM", { locale: it })} - {format(addDays(currentWeekStart, 6), "d MMM", { locale: it })}
+                </span>
+              </div>
+            </div>
+
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setCurrentWeekStart(startOfWeek(new Date(), { weekStartsOn: 0 }))}
+              disabled={isSameWeek(currentWeekStart, new Date(), { weekStartsOn: 0 })}
+              data-testid="button-current-week"
+            >
+              Oggi
+            </Button>
+
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setCurrentWeekStart(prev => addDays(prev, 7))}
+              data-testid="button-next-week"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+        )}
+
         {/* Weekly Calendar */}
         {showCalendar && (
           <>
             <WeeklyCalendar 
-              weekStart={new Date()}
+              weekStart={currentWeekStart}
               assignments={assignments}
               onDayClick={handleDayClick}
               onRemoveMeal={handleRemoveMealFromDay}
