@@ -32,6 +32,7 @@ export default function Stats() {
   const [categoryData, setCategoryData] = useState<any[]>([]);
   const [glucoseInsulinData, setGlucoseInsulinData] = useState<any[]>([]);
   const [badges, setBadges] = useState<Badge[]>([]);
+  const [topFoodsMetric, setTopFoodsMetric] = useState<string>('frequenza');
 
   useEffect(() => {
     const today = new Date();
@@ -175,9 +176,11 @@ export default function Stats() {
       .slice(0, 10)
       .map(food => ({
         nome: food.name,
-        volte: food.count,
+        frequenza: food.count,
         calorie: Math.round(food.totalCalories),
         proteine: Math.round(food.totalProtein),
+        carboidrati: 0,
+        grassi: 0,
       }));
     setTopFoodsData(topFoods);
 
@@ -341,15 +344,6 @@ export default function Stats() {
               data-testid="chart-consistency"
             />
 
-            {/* Top 10 Foods - Table */}
-            <StatisticsChart 
-              type="table"
-              data={topFoodsData}
-              title="Top 10 Cibi Più Consumati"
-              columns={['nome', 'volte', 'calorie', 'proteine']}
-              data-testid="chart-top-foods"
-            />
-
             {/* Consumption by Category - Pie chart */}
             <StatisticsChart 
               type="pie"
@@ -364,6 +358,15 @@ export default function Stats() {
               data={glucoseInsulinData}
               title="Glucosio & Insulina (7 giorni)"
               data-testid="chart-glucose-insulin"
+            />
+
+            {/* Top 10 Foods - Custom view with metric selector */}
+            <StatisticsChart 
+              type="top-foods"
+              data={topFoodsData}
+              title="Top 10 Cibi"
+              metricOptions={['frequenza', 'calorie', 'proteine', 'carboidrati', 'grassi']}
+              data-testid="chart-top-foods"
             />
           </TabsContent>
 
