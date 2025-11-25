@@ -25,10 +25,12 @@ import { Plus, Heart, ShoppingCart, Trash2, Search } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { loadFoods, loadMeals, saveMeals, loadWeeklyAssignments, assignMealToDay, removeMealFromDay, calculateMealNutrition, saveShoppingLists, loadShoppingLists } from "@/lib/storage";
+import { useToast } from "@/hooks/use-toast";
 import type { Meal } from "@/lib/storage";
 import type { FoodItem } from "@shared/schema";
 
 export default function Meals() {
+  const { toast } = useToast();
   const [meals, setMeals] = useState<Meal[]>([]);
   const [foods, setFoods] = useState<FoodItem[]>([]);
   const [assignments, setAssignments] = useState<any[]>([]);
@@ -109,7 +111,7 @@ export default function Meals() {
   };
 
   const handleGenerateShoppingList = () => {
-    const items: Array<{ id: string; name: string; checked: boolean }> = [];
+    const newItems: Array<{ id: string; name: string; checked: boolean }> = [];
     const addedFoods = new Set<string>();
 
     assignments.forEach(assignment => {
@@ -118,7 +120,7 @@ export default function Meals() {
         meal.ingredients.forEach(ing => {
           const food = foods.find(f => f.id === ing.foodId);
           if (food && !addedFoods.has(food.id)) {
-            items.push({
+            newItems.push({
               id: food.id,
               name: `${food.name} (${ing.grams}g)`,
               checked: false,
@@ -129,21 +131,58 @@ export default function Meals() {
       }
     });
 
-    if (items.length === 0) {
-      alert('Nessun pasto assegnato al calendario');
+    if (newItems.length === 0) {
+      toast({
+        title: "Nessun pasto",
+        description: "Assegna dei pasti al calendario prima di generare la lista spesa.",
+        variant: "destructive",
+      });
       return;
     }
 
     const lists = loadShoppingLists();
-    const newList = {
-      id: Date.now().toString(),
-      name: `Spesa Settimanale - ${new Date().toLocaleDateString('it-IT')}`,
-      items,
-      isPredefined: false,
-    };
-    lists.push(newList);
-    saveShoppingLists(lists);
-    alert('Lista spesa generata e salvata!');
+    const todayDate = new Date().toLocaleDateString('it-IT');
+    const listName = `Spesa Settimanale - ${todayDate}`;
+    
+    // Cerca se esiste già una lista con lo stesso nome
+    const existingListIndex = lists.findIndex(
+      list => list.name === listName && !list.isPredefined
+    );
+
+    let addedCount = 0;
+
+    if (existingListIndex >= 0) {
+      // Lista esiste: aggiungi solo gli elementi nuovi
+      const existingList = lists[existingListIndex];
+      const existingFoodIds = new Set(existingList.items.map(item => item.id));
+      
+      newItems.forEach(item => {
+        if (!existingFoodIds.has(item.id)) {
+          existingList.items.push(item);
+          addedCount++;
+        }
+      });
+
+      saveShoppingLists(lists);
+      toast({
+        title: "Lista spesa aggiornata",
+        description: `${addedCount} ${addedCount === 1 ? 'elemento aggiunto' : 'elementi aggiunti'} alla lista esistente.`,
+      });
+    } else {
+      // Lista non esiste: crea una nuova
+      const newList = {
+        id: Date.now().toString(),
+        name: listName,
+        items: newItems,
+        isPredefined: false,
+      };
+      lists.push(newList);
+      saveShoppingLists(lists);
+      toast({
+        title: "Lista spesa creata",
+        description: `${newItems.length} ${newItems.length === 1 ? 'elemento' : 'elementi'} aggiunto alla lista spesa.`,
+      });
+    }
   };
 
   // Filter meals by search and favorites
