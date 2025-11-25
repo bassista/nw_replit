@@ -34,6 +34,7 @@ import { useState, useEffect } from "react";
 import { useLanguage } from "@/lib/languageContext";
 import type { Language } from "@/lib/i18n";
 import { loadSettings, saveSettings, loadCategories, saveCategories, exportAllData, importAllData, clearAllData, exportFoodsAsCSV, importFoodsFromCSV, saveFoods } from "@/lib/storage";
+import { useAppStore } from "@/context/AppStore";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Settings() {
@@ -127,7 +128,7 @@ export default function Settings() {
       const file = e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = (event) => {
+      reader.onload = async (event) => {
         try {
           const csvContent = event.target?.result as string;
           const foods = importFoodsFromCSV(csvContent);
@@ -140,6 +141,8 @@ export default function Settings() {
             return;
           }
           saveFoods(foods);
+          // Force immediate save to localStorage before reload
+          await useAppStore.getState().saveState();
           toast({
             title: language === 'it' ? 'Importazione completata' : 'Import successful',
             description: language === 'it' ? `${foods.length} ${foods.length === 1 ? 'alimento' : 'alimenti'} importati con successo.` : `${foods.length} ${foods.length === 1 ? 'food' : 'foods'} imported successfully.`,
