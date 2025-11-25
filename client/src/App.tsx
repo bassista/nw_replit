@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider } from "@/lib/languageContext";
 import { useAppStore } from "@/context/AppStore";
+import { useWaterReminders } from "@/hooks/use-water-reminders";
 import BottomNav from "@/components/BottomNav";
 import Home from "@/pages/Home";
 import Foods from "@/pages/Foods";
@@ -31,7 +32,7 @@ function Router() {
   );
 }
 
-function App() {
+function AppContent() {
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
@@ -42,18 +43,41 @@ function App() {
     loadAppState();
   }, []);
 
+  // Register Service Worker and setup water reminders
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch((error) => {
+        console.error('SW registration failed:', error);
+      });
+
+      // Request notification permission
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
+    }
+  }, []);
+
+  // Use water reminders hook
+  useWaterReminders();
+
   if (!isLoaded) {
     return <div className="min-h-screen bg-background" />;
   }
 
   return (
+    <div className="relative">
+      <Router />
+      <BottomNav />
+    </div>
+  );
+}
+
+function App() {
+  return (
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
         <TooltipProvider>
-          <div className="relative">
-            <Router />
-            <BottomNav />
-          </div>
+          <AppContent />
           <Toaster />
         </TooltipProvider>
       </LanguageProvider>
