@@ -113,9 +113,10 @@ Preferred communication style: Simple, everyday language.
 - "Clear Day" button to remove all items from daily diary
 
 **Health Tracking**:
-- Water intake monitoring with reminder system
-- Weight, glucose, and insulin logging with date-based tracking
-- Historical data visualization
+- **Water Intake**: Track daily water consumption against a goal. Quick "Add Glass" button with configurable glass capacity. Visual progress bar shows consumption status
+- **Body Weight**: Log daily weight in kilograms with date-based tracking. Easy input dialog for quick logging
+- **Blood Glucose**: Log blood glucose levels in mg/dL for diabetes/health monitoring. Date-based historical tracking
+- **Insulin Intake**: Log insulin doses in units for diabetic users. Complete health metrics dashboard on dedicated Health page with date navigation
 
 **Shopping Lists**:
 - Smart shopping list generation from weekly meal calendar
