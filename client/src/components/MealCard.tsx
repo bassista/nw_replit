@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Heart, ShoppingCart, Calendar } from "lucide-react";
+import { Heart, ShoppingCart, Calendar, Edit2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface MealCardProps {
@@ -17,6 +17,8 @@ interface MealCardProps {
   onToggleFavorite?: (id: string) => void;
   onAddToShoppingList?: (id: string) => void;
   onAddToCalendar?: (id: string) => void;
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
   onClick?: (id: string) => void;
   onDragStart?: (mealId: string, mealName: string, e: React.DragEvent<HTMLDivElement>) => void;
   isDragging?: boolean;
@@ -27,6 +29,8 @@ export default function MealCard({
   onToggleFavorite, 
   onAddToShoppingList,
   onAddToCalendar,
+  onEdit,
+  onDelete,
   onClick,
   onDragStart,
   isDragging
@@ -109,6 +113,32 @@ export default function MealCard({
             >
               <Calendar className="w-4 h-4 mr-2" />
               Calendario
+            </Button>
+          )}
+          {onEdit && (
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(meal.id);
+              }}
+              data-testid={`button-edit-${meal.id}`}
+            >
+              <Edit2 className="w-4 h-4" />
+            </Button>
+          )}
+          {onDelete && (
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(meal.id);
+              }}
+              data-testid={`button-delete-${meal.id}`}
+            >
+              <Trash2 className="w-4 h-4" />
             </Button>
           )}
         </div>

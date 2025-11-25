@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Trash2, Plus } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { FoodItem } from "@shared/schema";
 import type { Meal, MealIngredient } from "@/lib/storage";
 import {
@@ -20,13 +20,27 @@ interface AddMealDialogProps {
   onClose: () => void;
   onSave: (meal: Meal) => void;
   foods: FoodItem[];
+  initialMeal?: Meal;
 }
 
-export default function AddMealDialog({ open, onClose, onSave, foods }: AddMealDialogProps) {
-  const [mealName, setMealName] = useState("");
-  const [ingredients, setIngredients] = useState<MealIngredient[]>([]);
+export default function AddMealDialog({ open, onClose, onSave, foods, initialMeal }: AddMealDialogProps) {
+  const [mealName, setMealName] = useState(initialMeal?.name || "");
+  const [ingredients, setIngredients] = useState<MealIngredient[]>(initialMeal?.ingredients || []);
   const [selectedFoodId, setSelectedFoodId] = useState("");
   const [selectedGrams, setSelectedGrams] = useState("100");
+
+  // Reset form when dialog opens/closes or initialMeal changes
+  useEffect(() => {
+    if (open && initialMeal) {
+      setMealName(initialMeal.name);
+      setIngredients(initialMeal.ingredients);
+    } else if (!open) {
+      setMealName("");
+      setIngredients([]);
+      setSelectedFoodId("");
+      setSelectedGrams("100");
+    }
+  }, [open, initialMeal]);
 
   const handleAddIngredient = () => {
     if (!selectedFoodId) return;
@@ -52,10 +66,10 @@ export default function AddMealDialog({ open, onClose, onSave, foods }: AddMealD
     if (!mealName.trim() || ingredients.length === 0) return;
 
     const newMeal: Meal = {
-      id: Date.now().toString(),
+      id: initialMeal?.id || Date.now().toString(),
       name: mealName.trim(),
       ingredients,
-      isFavorite: false,
+      isFavorite: initialMeal?.isFavorite || false,
       totalCalories: 0,
       totalProtein: 0,
       totalCarbs: 0,
@@ -76,7 +90,7 @@ export default function AddMealDialog({ open, onClose, onSave, foods }: AddMealD
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Crea Nuovo Pasto</DialogTitle>
+          <DialogTitle>{initialMeal ? 'Modifica Pasto' : 'Crea Nuovo Pasto'}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -181,7 +195,7 @@ export default function AddMealDialog({ open, onClose, onSave, foods }: AddMealD
             disabled={!mealName.trim() || ingredients.length === 0}
             data-testid="button-save-meal"
           >
-            Crea Pasto
+            {initialMeal ? 'Salva Modifiche' : 'Crea Pasto'}
           </Button>
         </DialogFooter>
       </DialogContent>

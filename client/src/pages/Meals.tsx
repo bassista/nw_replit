@@ -39,6 +39,7 @@ export default function Meals() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
   const [showCalendar, setShowCalendar] = useState(true);
+  const [mealToEdit, setMealToEdit] = useState<Meal | null>(null);
 
   useEffect(() => {
     const loadedFoods = loadFoods();
@@ -50,9 +51,19 @@ export default function Meals() {
 
   const handleSaveMeal = (newMeal: Meal) => {
     const calculatedMeal = calculateMealNutrition(newMeal, foods);
-    const updatedMeals = [...meals, calculatedMeal];
-    setMeals(updatedMeals);
-    saveMeals(updatedMeals);
+    
+    if (mealToEdit) {
+      // Edit existing meal
+      const updatedMeals = meals.map(m => m.id === newMeal.id ? calculatedMeal : m);
+      setMeals(updatedMeals);
+      saveMeals(updatedMeals);
+      setMealToEdit(null);
+    } else {
+      // Add new meal
+      const updatedMeals = [...meals, calculatedMeal];
+      setMeals(updatedMeals);
+      saveMeals(updatedMeals);
+    }
     setDialogOpen(false);
   };
 
@@ -254,6 +265,14 @@ export default function Meals() {
                   const meal = meals.find(m => m.id === id);
                   if (meal) handleAssignMealToDay(0, meal);
                 }}
+                onEdit={(id) => {
+                  const mealToEdit = meals.find(m => m.id === id);
+                  if (mealToEdit) {
+                    setMealToEdit(mealToEdit);
+                    setDialogOpen(true);
+                  }
+                }}
+                onDelete={(id) => setMealToDelete(id)}
                 onClick={(id) => console.log('View meal:', id)}
                 onDragStart={handleMealDragStart}
               />
@@ -270,12 +289,16 @@ export default function Meals() {
         </div>
       </div>
 
-      {/* Add Meal Dialog */}
+      {/* Add/Edit Meal Dialog */}
       <AddMealDialog
         open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
+        onClose={() => {
+          setDialogOpen(false);
+          setMealToEdit(null);
+        }}
         onSave={handleSaveMeal}
         foods={foods}
+        initialMeal={mealToEdit || undefined}
       />
 
       {/* Select Day Meal Dialog */}
