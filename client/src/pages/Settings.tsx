@@ -33,7 +33,7 @@ import { Save, Download, Upload, Trash2, Plus, Edit2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLanguage } from "@/lib/languageContext";
 import type { Language } from "@/lib/i18n";
-import { loadSettings, saveSettings, loadCategories, saveCategories, exportAllData, importAllData, clearAllData } from "@/lib/storage";
+import { loadSettings, saveSettings, loadCategories, saveCategories, exportAllData, importAllData, clearAllData, exportFoodsAsCSV, importFoodsFromCSV, saveFoods } from "@/lib/storage";
 
 export default function Settings() {
   const { language, setLanguage, t } = useLanguage();
@@ -91,6 +91,51 @@ export default function Settings() {
   const handleResetDatabase = () => {
     clearAllData();
     window.location.reload();
+  };
+
+  const handleExportFoodsCSV = () => {
+    try {
+      const csv = exportFoodsAsCSV();
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `nutritrack-foods-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error exporting foods:', error);
+      alert(language === 'it' ? 'Errore nell\'esportazione dei cibi' : 'Error exporting foods');
+    }
+  };
+
+  const handleImportFoodsCSV = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.csv';
+    input.onchange = (e: any) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const csvContent = event.target?.result as string;
+          const foods = importFoodsFromCSV(csvContent);
+          if (foods.length === 0) {
+            alert(language === 'it' ? 'Nessun alimento trovato nel file' : 'No foods found in file');
+            return;
+          }
+          saveFoods(foods);
+          alert(language === 'it' ? `${foods.length} alimenti importati con successo!` : `${foods.length} foods imported successfully!`);
+          window.location.reload();
+        } catch (error) {
+          console.error('Error importing foods:', error);
+          alert(language === 'it' ? 'Errore nell\'importazione del CSV' : 'Error importing CSV file');
+        }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
   };
 
   const handleAddCategory = () => {
@@ -366,6 +411,30 @@ export default function Settings() {
               <Upload className="w-4 h-4 mr-2" />
               {t.settings.importData}
             </Button>
+
+            <div className="border-t border-card-border my-3"></div>
+
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={handleExportFoodsCSV}
+              data-testid="button-export-foods-csv"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              {language === 'it' ? 'Scarica Cibi (CSV)' : 'Download Foods (CSV)'}
+            </Button>
+
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={handleImportFoodsCSV}
+              data-testid="button-import-foods-csv"
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              {language === 'it' ? 'Carica Cibi (CSV)' : 'Upload Foods (CSV)'}
+            </Button>
+
+            <div className="border-t border-card-border my-3"></div>
 
             <Button
               variant="destructive"

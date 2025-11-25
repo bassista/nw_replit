@@ -333,6 +333,118 @@ export function checkPerfectWeek(settings: Settings): boolean {
   return true;
 }
 
+// CSV Export/Import for Foods
+export function exportFoodsAsCSV(): string {
+  const foods = loadFoods();
+  
+  // Header
+  const header = 'id,serving_size_g,calories,protein,carbohydrates,fat,fiber,sugar,sodium,name_category';
+  
+  // Rows
+  const rows = foods.map(food => {
+    const serving_size_g = 100; // default serving size
+    const calories = food.calories;
+    const protein = food.protein;
+    const carbohydrates = food.carbs;
+    const fat = food.fat;
+    const fiber = food.fiber || 0;
+    const sugar = food.sugar || 0;
+    const sodium = food.sodium || 0;
+    
+    // Build name_category field with multilingual format
+    // Format: it=Name_IT:Category_IT;en=Name_EN:Category_EN
+    const name_category = `"it=${food.name}:${food.category || 'Senza categoria'};en=${food.name}:${food.category || 'Uncategorized'}"`;
+    
+    return `${food.id},${serving_size_g},${calories},${protein},${carbohydrates},${fat},${fiber},${sugar},${sodium},${name_category}`;
+  });
+  
+  return [header, ...rows].join('\n');
+}
+
+export function importFoodsFromCSV(csvContent: string): FoodItem[] {
+  const lines = csvContent.trim().split('\n');
+  if (lines.length < 2) throw new Error('CSV file is empty or invalid');
+  
+  const foods: FoodItem[] = [];
+  
+  // Skip header row
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    
+    try {
+      // Parse CSV line, handling quoted fields
+      const fields: string[] = [];
+      let current = '';
+      let inQuotes = false;
+      
+      for (let j = 0; j < line.length; j++) {
+        const char = line[j];
+        
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          fields.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      fields.push(current.trim());
+      
+      if (fields.length < 10) continue;
+      
+      const id = fields[0];
+      const calories = parseFloat(fields[2]);
+      const protein = parseFloat(fields[3]);
+      const carbohydrates = parseFloat(fields[4]);
+      const fat = parseFloat(fields[5]);
+      const fiber = parseFloat(fields[6]) || 0;
+      const sugar = parseFloat(fields[7]) || 0;
+      const sodium = parseFloat(fields[8]) || 0;
+      
+      // Parse name_category field
+      let name = '';
+      let category = 'Senza categoria';
+      const nameCategory = fields[9].replace(/^"|"$/g, ''); // Remove quotes
+      
+      // Extract Italian name and category
+      const parts = nameCategory.split(';');
+      for (const part of parts) {
+        if (part.startsWith('it=')) {
+          const [n, c] = part.substring(3).split(':');
+          name = n || '';
+          category = c || 'Senza categoria';
+          break;
+        }
+      }
+      
+      if (!name) continue;
+      
+      const food: FoodItem = {
+        id,
+        name,
+        category,
+        calories,
+        protein,
+        carbs: carbohydrates,
+        fat,
+        fiber,
+        sugar,
+        sodium,
+        isFavorite: false,
+      };
+      
+      foods.push(food);
+    } catch (error) {
+      console.error(`Error parsing CSV line ${i}:`, error);
+      continue;
+    }
+  }
+  
+  return foods;
+}
+
 // Export/Import all data
 export function exportAllData() {
   // Collect all water intake data
