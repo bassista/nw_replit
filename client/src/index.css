@@ -213,9 +213,13 @@
     -moz-appearance: textfield;
   }
 
-  /* Hide scrollbar when dialog is open */
-  body[style*="pointer-events"] {
-    overflow: hidden;
+  /* Hide scrollbar when dialog is open (Radix Dialog) */
+  body:has([data-radix-dialog-overlay]) {
+    overflow: hidden !important;
+  }
+  
+  html:has([data-radix-dialog-overlay]) {
+    overflow: hidden !important;
   }
 
   /* Placeholder styling for contentEditable div */
