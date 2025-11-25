@@ -335,9 +335,25 @@ export function checkPerfectWeek(settings: Settings): boolean {
 
 // Export/Import all data
 export function exportAllData() {
+  // Collect all water intake data
+  const waterIntake: { [key: string]: number } = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key?.startsWith('nutritrack_water_')) {
+      const date = key.replace('nutritrack_water_', '');
+      const value = localStorage.getItem(key);
+      if (value) {
+        waterIntake[date] = parseInt(value);
+      }
+    }
+  }
+
   return {
     foods: loadFoods(),
     dailyMeals: loadDailyMeals(),
+    meals: loadMeals(),
+    weeklyAssignments: loadWeeklyAssignments(),
+    waterIntake: waterIntake,
     shoppingLists: loadShoppingLists(),
     settings: loadSettings(),
     categories: loadCategories(),
@@ -349,6 +365,13 @@ export function exportAllData() {
 export function importAllData(data: any) {
   if (data.foods) saveFoods(data.foods);
   if (data.dailyMeals) saveDailyMeals(data.dailyMeals);
+  if (data.meals) saveMeals(data.meals);
+  if (data.weeklyAssignments) saveWeeklyAssignments(data.weeklyAssignments);
+  if (data.waterIntake && typeof data.waterIntake === 'object') {
+    Object.entries(data.waterIntake).forEach(([date, ml]) => {
+      saveWaterIntake(date, ml as number);
+    });
+  }
   if (data.shoppingLists) saveShoppingLists(data.shoppingLists);
   if (data.settings) saveSettings(data.settings);
   if (data.categories) saveCategories(data.categories);
