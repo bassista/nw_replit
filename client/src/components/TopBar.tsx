@@ -23,10 +23,10 @@ export default function TopBar({
   const isSettingsPage = location === '/settings';
 
   return (
-    <header className="sticky top-0 bg-card border-b border-card-border z-40">
+    <header className="sticky top-0 bg-card border-b border-card-border z-40 shadow-sm">
       <div className="flex items-center justify-between h-14 px-4 max-w-2xl mx-auto">
         <div className="flex items-center gap-3">
-          <h1 className="text-lg font-semibold text-foreground">{title}</h1>
+          <h1 className="text-base font-600 text-foreground">{title}</h1>
         </div>
         <div className="flex items-center gap-2">
           {showSearch && (

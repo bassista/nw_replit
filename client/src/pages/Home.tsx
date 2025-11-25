@@ -456,7 +456,7 @@ export default function Home() {
         />
 
         {/* Daily Meal Section */}
-        <Card className="overflow-hidden">
+        <Card className="overflow-hidden shadow-sm hover:shadow-md">
           <div className="p-4 bg-muted/50 flex items-center justify-between">
             <h3 className="font-semibold text-foreground">{t.diary.dailyMeal}</h3>
             <Badge variant="secondary" className="font-semibold">
