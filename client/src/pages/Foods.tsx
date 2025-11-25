@@ -12,9 +12,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Search, Upload, Heart } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { FoodItem } from "@shared/schema";
 import { useLanguage } from "@/lib/languageContext";
+import { loadFoods, saveFoods, loadCategories, saveCategories } from "@/lib/storage";
 
 export default function Foods() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -22,21 +23,39 @@ export default function Foods() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [editingFood, setEditingFood] = useState<FoodItem | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [foods, setFoods] = useState<FoodItem[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const { t } = useLanguage();
 
-  // Mock data - TODO: remove mock functionality
-  const categories = ["Carboidrati", "Frutta", "Latticini", "Proteine", "Verdure"];
-  
-  const [mockFoods, setMockFoods] = useState<FoodItem[]>([
-    { id: '1', name: 'Petto di Pollo', category: 'Proteine', calories: 165, protein: 31, carbs: 0, fat: 3.6, fiber: 0, isFavorite: true },
-    { id: '2', name: 'Riso Integrale', category: 'Carboidrati', calories: 216, protein: 5, carbs: 45, fat: 1.8, fiber: 3.5, isFavorite: false },
-    { id: '3', name: 'Broccoli', category: 'Verdure', calories: 55, protein: 3.7, carbs: 11, fat: 0.6, fiber: 2.6, isFavorite: true },
-    { id: '4', name: 'Salmone', category: 'Proteine', calories: 206, protein: 22, carbs: 0, fat: 13, fiber: 0, isFavorite: false },
-    { id: '5', name: 'Avocado', category: 'Frutta', calories: 160, protein: 2, carbs: 8.5, fat: 14.7, fiber: 6.7, isFavorite: true },
-    { id: '6', name: 'Uova', category: 'Proteine', calories: 155, protein: 13, carbs: 1.1, fat: 11, fiber: 0, isFavorite: false },
-  ]);
+  // Load data on mount
+  useEffect(() => {
+    const loadedFoods = loadFoods();
+    if (loadedFoods.length === 0) {
+      // Initialize with default foods if empty
+      const defaultFoods: FoodItem[] = [
+        { id: '1', name: 'Petto di Pollo', category: 'Proteine', calories: 165, protein: 31, carbs: 0, fat: 3.6, fiber: 0, isFavorite: true },
+        { id: '2', name: 'Riso Integrale', category: 'Carboidrati', calories: 216, protein: 5, carbs: 45, fat: 1.8, fiber: 3.5, isFavorite: false },
+        { id: '3', name: 'Broccoli', category: 'Verdure', calories: 55, protein: 3.7, carbs: 11, fat: 0.6, fiber: 2.6, isFavorite: true },
+        { id: '4', name: 'Salmone', category: 'Proteine', calories: 206, protein: 22, carbs: 0, fat: 13, fiber: 0, isFavorite: false },
+        { id: '5', name: 'Avocado', category: 'Frutta', calories: 160, protein: 2, carbs: 8.5, fat: 14.7, fiber: 6.7, isFavorite: true },
+        { id: '6', name: 'Uova', category: 'Proteine', calories: 155, protein: 13, carbs: 1.1, fat: 11, fiber: 0, isFavorite: false },
+      ];
+      saveFoods(defaultFoods);
+      setFoods(defaultFoods);
+    } else {
+      setFoods(loadedFoods);
+    }
+    setCategories(loadCategories());
+  }, []);
 
-  const filteredFoods = mockFoods.filter(food => {
+  // Save foods when they change
+  useEffect(() => {
+    if (foods.length > 0) {
+      saveFoods(foods);
+    }
+  }, [foods]);
+
+  const filteredFoods = foods.filter(food => {
     const matchesSearch = food.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesTab = activeTab === "all" || (activeTab === "favorites" && food.isFavorite);
     const matchesCategory = selectedCategory === "all" || food.category === selectedCategory;
@@ -44,11 +63,11 @@ export default function Foods() {
   });
 
   const handleSaveFood = (food: FoodItem) => {
-    setMockFoods(prev => prev.map(f => f.id === food.id ? food : f));
+    setFoods(prev => prev.map(f => f.id === food.id ? food : f));
   };
 
   const handleDeleteFood = (id: string) => {
-    setMockFoods(prev => prev.filter(f => f.id !== id));
+    setFoods(prev => prev.filter(f => f.id !== id));
   };
 
   return (
@@ -102,11 +121,11 @@ export default function Foods() {
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
           <TabsList className="w-full">
             <TabsTrigger value="all" className="flex-1" data-testid="tab-all">
-              {t.foods.all} ({mockFoods.length})
+              {t.foods.all} ({foods.length})
             </TabsTrigger>
             <TabsTrigger value="favorites" className="flex-1" data-testid="tab-favorites">
               <Heart className="w-4 h-4 mr-2" />
-              {t.foods.favorites} ({mockFoods.filter(f => f.isFavorite).length})
+              {t.foods.favorites} ({foods.filter(f => f.isFavorite).length})
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -135,7 +154,7 @@ export default function Foods() {
 
         {/* Pagination Info */}
         <div className="text-center text-sm text-muted-foreground">
-          {t.foods.showing} {filteredFoods.length} {t.foods.of} {mockFoods.length} {t.foods.items}
+          {t.foods.showing} {filteredFoods.length} {t.foods.of} {foods.length} {t.foods.items}
         </div>
       </div>
 

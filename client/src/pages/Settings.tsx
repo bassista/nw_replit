@@ -23,44 +23,36 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Save, Download, Upload, Trash2, Plus, Edit2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLanguage } from "@/lib/languageContext";
 import type { Language } from "@/lib/i18n";
+import { loadSettings, saveSettings, loadCategories, saveCategories, exportAllData, importAllData, clearAllData } from "@/lib/storage";
 
 export default function Settings() {
   const { language, setLanguage, t } = useLanguage();
   const [showResetDialog, setShowResetDialog] = useState(false);
-  
-  const [settings, setSettings] = useState({
-    itemsPerPage: 8,
-    waterTargetMl: 2000,
-    glassCapacityMl: 200,
-    waterReminderEnabled: false,
-    waterReminderIntervalMinutes: 120,
-    waterReminderStartHour: 8,
-    waterReminderEndHour: 20,
-    calorieGoal: 2000,
-    proteinGoal: 120,
-    carbsGoal: 250,
-    fatGoal: 65,
-  });
+  const [settings, setSettings] = useState(loadSettings());
+  const [categories, setCategories] = useState(loadCategories());
 
-  const [categories, setCategories] = useState([
-    "Carboidrati",
-    "Frutta",
-    "Latticini",
-    "Proteine",
-    "Verdure",
-  ]);
+  // Save settings when they change
+  useEffect(() => {
+    saveSettings(settings);
+  }, [settings]);
+
+  // Save categories when they change
+  useEffect(() => {
+    saveCategories(categories);
+  }, [categories]);
 
   const handleExportData = () => {
-    const data = { settings, categories, /* other data */ };
+    const data = exportAllData();
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'nutritrack-data.json';
+    a.download = `nutritrack-data-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
+    URL.revokeObjectURL(url);
   };
 
   const handleImportData = () => {
@@ -69,18 +61,26 @@ export default function Settings() {
     input.accept = 'application/json';
     input.onchange = (e: any) => {
       const file = e.target.files[0];
+      if (!file) return;
       const reader = new FileReader();
       reader.onload = (event) => {
         try {
           const data = JSON.parse(event.target?.result as string);
-          console.log('Import data:', data);
+          importAllData(data);
+          window.location.reload();
         } catch (error) {
           console.error('Error importing data:', error);
+          alert(language === 'it' ? 'Errore nell\'importazione dei dati' : 'Error importing data');
         }
       };
       reader.readAsText(file);
     };
     input.click();
+  };
+
+  const handleResetDatabase = () => {
+    clearAllData();
+    window.location.reload();
   };
 
   return (
@@ -343,7 +343,10 @@ export default function Settings() {
         {/* Save Button */}
         <Button
           className="w-full"
-          onClick={() => console.log('Save settings:', settings)}
+          onClick={() => {
+            saveSettings(settings);
+            saveCategories(categories);
+          }}
           data-testid="button-save"
         >
           <Save className="w-4 h-4 mr-2" />
@@ -363,10 +366,7 @@ export default function Settings() {
           <AlertDialogFooter>
             <AlertDialogCancel>{t.foods.cancel}</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => {
-                console.log('Reset database');
-                setShowResetDialog(false);
-              }}
+              onClick={handleResetDatabase}
               className="bg-destructive text-destructive-foreground"
             >
               {t.common.confirm}

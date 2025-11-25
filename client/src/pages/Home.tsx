@@ -6,30 +6,48 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format, addDays, subDays } from "date-fns";
 import { it } from "date-fns/locale";
 import { useLanguage } from "@/lib/languageContext";
+import { getDailyMeal, saveDailyMeal, loadSettings } from "@/lib/storage";
 
 export default function Home() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [waterMl, setWaterMl] = useState(1200);
+  const [dailyMealItems, setDailyMealItems] = useState<Array<{ id: string; name: string; calories: number; grams: number }>>([]);
+  const [settings, setSettings] = useState(loadSettings());
   const { t } = useLanguage();
 
-  // Mock data - TODO: remove mock functionality
-  const mockNutrients = [
-    { name: 'Calorie', current: 1650, target: 2000, unit: 'kcal', color: 'chart-1' },
-    { name: 'Proteine', current: 85, target: 120, unit: 'g', color: 'chart-2' },
-    { name: 'Carboidrati', current: 180, target: 250, unit: 'g', color: 'chart-3' },
-    { name: 'Grassi', current: 45, target: 65, unit: 'g', color: 'chart-4' },
-  ];
+  const dateKey = format(currentDate, 'yyyy-MM-dd');
 
-  const [dailyMealItems, setDailyMealItems] = useState([
-    { id: '1', name: 'Cereali integrali', calories: 180, grams: 50 },
-    { id: '2', name: 'Latte scremato', calories: 90, grams: 200 },
-    { id: '3', name: 'Pasta al pomodoro', calories: 350, grams: 100 },
-    { id: '4', name: 'Insalata mista', calories: 50, grams: 150 },
-  ]);
+  // Load daily meal when date changes
+  useEffect(() => {
+    const items = getDailyMeal(dateKey);
+    setDailyMealItems(items);
+  }, [dateKey]);
+
+  // Save daily meal when items change
+  useEffect(() => {
+    saveDailyMeal(dateKey, dailyMealItems);
+  }, [dailyMealItems, dateKey]);
+
+  // Calculate nutrients from daily meal
+  const calculateNutrients = () => {
+    const currentCalories = dailyMealItems.reduce((sum, item) => sum + item.calories, 0);
+    const currentProtein = Math.round(currentCalories * 0.35 / 4); // Rough estimation
+    const currentCarbs = Math.round(currentCalories * 0.45 / 4);
+    const currentFat = Math.round(currentCalories * 0.20 / 9);
+
+    return [
+      { name: 'Calorie', current: currentCalories, target: settings.calorieGoal, unit: 'kcal', color: 'chart-1' },
+      { name: 'Proteine', current: currentProtein, target: settings.proteinGoal, unit: 'g', color: 'chart-2' },
+      { name: 'Carboidrati', current: currentCarbs, target: settings.carbsGoal, unit: 'g', color: 'chart-3' },
+      { name: 'Grassi', current: currentFat, target: settings.fatGoal, unit: 'g', color: 'chart-4' },
+    ];
+  };
+
+  const mockNutrients = calculateNutrients();
 
   return (
     <div className="min-h-screen bg-background pb-20">
