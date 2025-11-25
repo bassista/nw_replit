@@ -42,6 +42,8 @@ export default function Meals() {
   const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
   const [showCalendar, setShowCalendar] = useState(true);
   const [mealToEdit, setMealToEdit] = useState<Meal | null>(null);
+  const [mealToAssignToDay, setMealToAssignToDay] = useState<Meal | null>(null);
+  const [showDaySelector, setShowDaySelector] = useState(false);
 
   useEffect(() => {
     const loadedFoods = loadFoods();
@@ -108,6 +110,44 @@ export default function Meals() {
     assignMealToDay(dayOfWeek, mealId, mealName);
     setAssignments(loadWeeklyAssignments());
     setDraggedMealId(undefined);
+  };
+
+  const handleAddMealToShoppingList = (meal: Meal) => {
+    const lists = loadShoppingLists();
+    
+    // Mappa ingredienti in item di lista spesa
+    const mealItems = meal.ingredients.map(ing => {
+      const food = foods.find(f => f.id === ing.foodId);
+      return {
+        id: ing.foodId,
+        name: `${food?.name || 'Cibo'} (${ing.grams}g)`,
+        checked: false,
+      };
+    });
+
+    if (mealItems.length === 0) {
+      toast({
+        title: "Pasto vuoto",
+        description: "Il pasto non ha ingredienti.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Crea una nuova lista con il nome del pasto
+    const newList = {
+      id: Date.now().toString(),
+      name: `${meal.name} - ${new Date().toLocaleDateString('it-IT')}`,
+      items: mealItems,
+      isPredefined: false,
+    };
+    lists.push(newList);
+    saveShoppingLists(lists);
+
+    toast({
+      title: "Lista spesa creata",
+      description: `Lista spesa per "${meal.name}" creata con ${mealItems.length} ${mealItems.length === 1 ? 'elemento' : 'elementi'}.`,
+    });
   };
 
   const handleGenerateShoppingList = () => {
@@ -299,10 +339,18 @@ export default function Meals() {
                 meal={meal}
                 isDragging={draggedMealId === meal.id}
                 onToggleFavorite={handleToggleFavorite}
-                onAddToShoppingList={() => console.log('TODO: Add to shopping list')}
+                onAddToShoppingList={(id) => {
+                  const selectedMeal = meals.find(m => m.id === id);
+                  if (selectedMeal) {
+                    handleAddMealToShoppingList(selectedMeal);
+                  }
+                }}
                 onAddToCalendar={(id) => {
-                  const meal = meals.find(m => m.id === id);
-                  if (meal) handleAssignMealToDay(0, meal);
+                  const selectedMeal = meals.find(m => m.id === id);
+                  if (selectedMeal) {
+                    setMealToAssignToDay(selectedMeal);
+                    setShowDaySelector(true);
+                  }
                 }}
                 onEdit={(id) => {
                   const mealToEdit = meals.find(m => m.id === id);
@@ -400,6 +448,48 @@ export default function Meals() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Select Day for Meal Dialog */}
+      <Dialog open={showDaySelector} onOpenChange={(open) => !open && (setShowDaySelector(false), setMealToAssignToDay(null))}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Seleziona il giorno per "{mealToAssignToDay?.name}"</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-2">
+            {['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'].map((day, dayIndex) => (
+              <Button
+                key={dayIndex}
+                variant="outline"
+                className="w-full justify-start"
+                onClick={() => {
+                  if (mealToAssignToDay) {
+                    handleAssignMealToDay(dayIndex, mealToAssignToDay);
+                    setShowDaySelector(false);
+                    setMealToAssignToDay(null);
+                  }
+                }}
+                data-testid={`button-assign-to-day-${dayIndex}`}
+              >
+                {day}
+              </Button>
+            ))}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDaySelector(false);
+                setMealToAssignToDay(null);
+              }}
+              data-testid="button-cancel-day-selection"
+            >
+              Annulla
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
