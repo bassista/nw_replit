@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { FoodItem } from "@shared/schema";
 import { useLanguage } from "@/lib/languageContext";
 
@@ -54,7 +54,7 @@ export default function EditFoodDialog({
   );
 
   // Update formData when food changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (food) {
       setFormData(food);
     }
