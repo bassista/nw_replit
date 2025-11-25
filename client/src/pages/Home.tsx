@@ -26,7 +26,7 @@ import { useState, useEffect } from "react";
 import { format, addDays, subDays } from "date-fns";
 import { it } from "date-fns/locale";
 import { useLanguage } from "@/lib/languageContext";
-import { getDailyMeal, saveDailyMeal, loadSettings, getWaterIntake, saveWaterIntake, loadFoods, type DailyMealItem } from "@/lib/storage";
+import { getDailyMeal, saveDailyMeal, loadSettings, getWaterIntake, saveWaterIntake, loadFoods, calculateDailyScore, type DailyMealItem } from "@/lib/storage";
 import type { FoodItem } from "@shared/schema";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
@@ -150,6 +150,81 @@ export default function Home() {
 
   const mockNutrients = calculateNutrients();
 
+  // Calculate dynamic daily score and explanation
+  const calculateScoreExplanation = (): { grade: "A+" | "A" | "A-" | "B+" | "B" | "B-" | "C+" | "C" | "C-" | "D" | "F"; explanation: string } => {
+    const gradeStr = calculateDailyScore(dateKey, settings);
+    const grade = gradeStr as "A+" | "A" | "A-" | "B+" | "B" | "B-" | "C+" | "C" | "C-" | "D" | "F";
+    
+    const totalCalories = dailyMealItems.reduce((sum, item) => sum + item.calories, 0);
+    const totalProtein = dailyMealItems.reduce((sum, item) => sum + item.protein, 0);
+    const totalCarbs = dailyMealItems.reduce((sum, item) => sum + item.carbs, 0);
+    const totalFat = dailyMealItems.reduce((sum, item) => sum + item.fat, 0);
+    const foodVariety = new Set(dailyMealItems.map(item => item.foodId)).size;
+
+    let explanation = '';
+    const calorieRatio = totalCalories / settings.calorieGoal;
+    const proteinRatio = totalProtein / settings.proteinGoal;
+    const carbsRatio = totalCarbs / settings.carbsGoal;
+    const fatRatio = totalFat / settings.fatGoal;
+
+    // Check if no food
+    if (dailyMealItems.length === 0) {
+      return {
+        grade: 'F',
+        explanation: 'Inizia ad aggiungere alimenti al tuo diario!'
+      };
+    }
+
+    // Generate specific feedback based on nutrients
+    const issues: string[] = [];
+    const strengths: string[] = [];
+
+    if (calorieRatio < 0.8) {
+      issues.push('calorie troppo basse');
+    } else if (calorieRatio > 1.2) {
+      issues.push('calorie troppo alte');
+    } else {
+      strengths.push('calorie ben bilanciate');
+    }
+
+    if (proteinRatio < 0.8) {
+      issues.push('proteine insufficienti');
+    } else if (proteinRatio > 1.2) {
+      issues.push('proteine eccessive');
+    } else {
+      strengths.push('proteine ottimali');
+    }
+
+    if (carbsRatio < 0.8) {
+      issues.push('carboidrati troppo bassi');
+    } else if (carbsRatio > 1.2) {
+      issues.push('carboidrati eccessivi');
+    } else {
+      strengths.push('carboidrati perfetti');
+    }
+
+    if (fatRatio < 0.8) {
+      issues.push('grassi insufficienti');
+    } else if (fatRatio > 1.2) {
+      issues.push('grassi eccessivi');
+    } else {
+      strengths.push('grassi bilanciati');
+    }
+
+    // Build explanation
+    if (issues.length === 0) {
+      explanation = `Perfetto! ${strengths.slice(0, 2).join(', ')}. Varietà: ${foodVariety} cibi diversi.`;
+    } else if (strengths.length >= 2) {
+      explanation = `Bene! ${strengths.slice(0, 2).join(', ')}. Attenzione: ${issues[0]}.`;
+    } else {
+      explanation = `Da migliorare: ${issues.slice(0, 2).join(', ')}. Varietà: ${foodVariety} cibi.`;
+    }
+
+    return { grade, explanation };
+  };
+
+  const { grade, explanation } = calculateScoreExplanation();
+
   return (
     <div className="min-h-screen bg-background pb-20">
       <TopBar 
@@ -189,8 +264,8 @@ export default function Home() {
 
         {/* Daily Score */}
         <MealScoreCard 
-          grade="A-"
-          explanation="Ottimo bilanciamento dei nutrienti oggi! Potresti aggiungere più verdure alla cena."
+          grade={grade}
+          explanation={explanation}
           type="day"
         />
 
