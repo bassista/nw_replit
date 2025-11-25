@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Heart, Plus, Beef, Wheat, Droplets } from "lucide-react";
+import { Heart, Plus, Beef, Wheat, Droplets, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { FoodItem } from "@shared/schema";
 
@@ -8,10 +8,11 @@ interface FoodCardProps {
   food: FoodItem;
   onToggleFavorite?: (id: string) => void;
   onAdd?: (id: string) => void;
+  onAddToDiary?: (id: string) => void;
   onClick?: (id: string) => void;
 }
 
-export default function FoodCard({ food, onToggleFavorite, onAdd, onClick }: FoodCardProps) {
+export default function FoodCard({ food, onToggleFavorite, onAdd, onAddToDiary, onClick }: FoodCardProps) {
   return (
     <Card 
       className="p-4 hover-elevate cursor-pointer"
@@ -56,6 +57,20 @@ export default function FoodCard({ food, onToggleFavorite, onAdd, onClick }: Foo
           >
             <Heart className={`w-4 h-4 ${food.isFavorite ? 'fill-destructive text-destructive' : ''}`} />
           </Button>
+          {onAddToDiary && (
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddToDiary(food.id);
+              }}
+              data-testid={`button-add-to-diary-${food.id}`}
+              title="Invia a Diario"
+            >
+              <BookOpen className="w-4 h-4" />
+            </Button>
+          )}
           {onAdd && (
             <Button
               size="icon"

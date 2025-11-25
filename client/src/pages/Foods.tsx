@@ -22,7 +22,7 @@ import { Search, Heart, Plus, ChevronLeft, ChevronRight, Barcode, Loader, X } fr
 import { useState, useEffect, useRef } from "react";
 import type { FoodItem } from "@shared/schema";
 import { useLanguage } from "@/lib/languageContext";
-import { loadFoods, saveFoods, loadCategories, saveCategories, loadSettings } from "@/lib/storage";
+import { loadFoods, saveFoods, loadCategories, saveCategories, loadSettings, saveDailyMeal, getDailyMeal } from "@/lib/storage";
 import { useToast } from "@/hooks/use-toast";
 import { Html5QrcodeScanner } from "html5-qrcode";
 
@@ -42,6 +42,9 @@ export default function Foods() {
   const [isScanning, setIsScanning] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
   const scannerRef = useRef<Html5QrcodeScanner | null>(null);
+  const [diaryDialogOpen, setDiaryDialogOpen] = useState(false);
+  const [selectedFoodForDiary, setSelectedFoodForDiary] = useState<FoodItem | null>(null);
+  const [diaryGrams, setDiaryGrams] = useState("100");
   const { t } = useLanguage();
 
   // Load data on mount
@@ -248,6 +251,64 @@ export default function Foods() {
     await searchProductByBarcode(barcodeInput);
   };
 
+  const handleAddFoodToDiary = (foodId: string) => {
+    const food = foods.find(f => f.id === foodId);
+    if (food) {
+      setSelectedFoodForDiary(food);
+      setDiaryGrams("100");
+      setDiaryDialogOpen(true);
+    }
+  };
+
+  const handleConfirmAddToDiary = () => {
+    if (!selectedFoodForDiary || !diaryGrams.trim()) {
+      toast({
+        title: "Quantità mancante",
+        description: "Inserisci una quantità valida in grammi.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const grams = parseInt(diaryGrams);
+    if (isNaN(grams) || grams <= 0) {
+      toast({
+        title: "Quantità non valida",
+        description: "Inserisci un numero positivo.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Calcola i nutrienti per la quantità specificata
+    const multiplier = grams / 100;
+    const today = new Date().toISOString().split('T')[0];
+    const dailyItems = getDailyMeal(today);
+
+    const newItem = {
+      id: Date.now().toString(),
+      foodId: selectedFoodForDiary.id,
+      name: selectedFoodForDiary.name,
+      calories: Math.round(selectedFoodForDiary.calories * multiplier),
+      protein: Math.round(selectedFoodForDiary.protein * multiplier * 10) / 10,
+      carbs: Math.round(selectedFoodForDiary.carbs * multiplier * 10) / 10,
+      fat: Math.round(selectedFoodForDiary.fat * multiplier * 10) / 10,
+      grams,
+    };
+
+    dailyItems.push(newItem);
+    saveDailyMeal(today, dailyItems);
+
+    toast({
+      title: "Aggiunto al diario",
+      description: `${selectedFoodForDiary.name} (${grams}g) aggiunto al diario.`,
+    });
+
+    setDiaryDialogOpen(false);
+    setSelectedFoodForDiary(null);
+    setDiaryGrams("100");
+  };
+
   return (
     <div className="min-h-screen bg-background pb-20">
       <TopBar 
@@ -325,6 +386,7 @@ export default function Foods() {
                 key={food.id}
                 food={food}
                 onToggleFavorite={handleToggleFavorite}
+                onAddToDiary={handleAddFoodToDiary}
                 onClick={(id) => {
                   setEditingFood(food);
                   setDialogOpen(true);
@@ -378,6 +440,60 @@ export default function Foods() {
         onSave={handleSaveFood}
         onDelete={handleDeleteFood}
       />
+
+      {/* Add Food to Diary Dialog */}
+      <Dialog open={diaryDialogOpen} onOpenChange={setDiaryDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Aggiungi "{selectedFoodForDiary?.name}" al Diario</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Quantità (grammi)</label>
+              <Input
+                type="number"
+                min="1"
+                max="10000"
+                value={diaryGrams}
+                onChange={(e) => setDiaryGrams(e.target.value)}
+                data-testid="input-diary-grams"
+                autoFocus
+              />
+            </div>
+            
+            {selectedFoodForDiary && (
+              <div className="bg-muted p-3 rounded-lg space-y-1">
+                <p className="text-xs text-muted-foreground">Valori per {diaryGrams}g:</p>
+                <div className="text-sm font-medium">
+                  <p>{Math.round(selectedFoodForDiary.calories * parseInt(diaryGrams) / 100)} kcal</p>
+                  <p className="text-xs text-muted-foreground">
+                    P: {Math.round(selectedFoodForDiary.protein * parseInt(diaryGrams) / 100 * 10) / 10}g | 
+                    C: {Math.round(selectedFoodForDiary.carbs * parseInt(diaryGrams) / 100 * 10) / 10}g | 
+                    G: {Math.round(selectedFoodForDiary.fat * parseInt(diaryGrams) / 100 * 10) / 10}g
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDiaryDialogOpen(false)}
+              data-testid="button-cancel-diary"
+            >
+              Annulla
+            </Button>
+            <Button
+              onClick={handleConfirmAddToDiary}
+              data-testid="button-confirm-add-diary"
+            >
+              Aggiungi al Diario
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Barcode Scanner Dialog */}
       <Dialog open={barcodeScannerOpen} onOpenChange={(open) => {
