@@ -96,6 +96,41 @@ export default function Foods() {
     setCurrentPage(1);
   }, [searchQuery, activeTab, selectedCategory]);
 
+  // Initialize camera scanner when cameraActive becomes true
+  useEffect(() => {
+    if (cameraActive) {
+      // Small delay to ensure DOM is ready
+      const timer = setTimeout(() => {
+        const element = document.getElementById("qr-reader");
+        if (element) {
+          const scanner = new Html5QrcodeScanner(
+            "qr-reader",
+            { fps: 10, qrbox: { width: 250, height: 250 } },
+            false
+          );
+
+          scannerRef.current = scanner;
+
+          scanner.render(
+            (decodedText) => {
+              // Barcode rilevato
+              setBarcodeInput(decodedText);
+              scanner.clear();
+              setCameraActive(false);
+              searchProductByBarcode(decodedText);
+            },
+            (error) => {
+              // Errore durante la scansione
+              console.error("QR Scanner error:", error);
+            }
+          );
+        }
+      }, 50);
+
+      return () => clearTimeout(timer);
+    }
+  }, [cameraActive]);
+
   const handleSaveFood = (food: FoodItem) => {
     // Check if it's a new food or an edit
     const existingFood = foods.find(f => f.id === food.id);
@@ -206,29 +241,7 @@ export default function Foods() {
 
   const handleStartCamera = () => {
     setCameraActive(true);
-    
-    // Inizializza lo scanner
-    const scanner = new Html5QrcodeScanner(
-      "qr-reader",
-      { fps: 10, qrbox: { width: 250, height: 250 } },
-      false
-    );
-
-    scannerRef.current = scanner;
-
-    scanner.render(
-      (decodedText) => {
-        // Barcode rilevato
-        setBarcodeInput(decodedText);
-        scanner.clear();
-        setCameraActive(false);
-        searchProductByBarcode(decodedText);
-      },
-      (error) => {
-        // Errore durante la scansione
-        console.error("QR Scanner error:", error);
-      }
-    );
+    // Lo scanner verrà inizializzato dal useEffect quando cameraActive diventa true
   };
 
   const handleStopCamera = () => {
