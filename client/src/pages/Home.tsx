@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Calendar, ChevronLeft, ChevronRight, Plus, Trash2, Search } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, Plus, Trash2, Search, Edit } from "lucide-react";
 import { useState, useEffect } from "react";
 import { format, addDays, subDays } from "date-fns";
 import { it } from "date-fns/locale";
@@ -207,8 +207,19 @@ export default function Home() {
                       <p className="text-sm text-muted-foreground">{item.fat}g grassi</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 flex-shrink-0">
+                  <div className="flex items-center gap-2 flex-shrink-0">
                     <Badge variant="outline">{item.calories} kcal</Badge>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditQuantity(item);
+                      }}
+                      data-testid={`button-edit-${item.id}`}
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
                     <Button
                       size="icon"
                       variant="ghost"
