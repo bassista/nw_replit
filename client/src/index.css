@@ -213,6 +213,11 @@
     -moz-appearance: textfield;
   }
 
+  /* Hide scrollbar when dialog is open */
+  body[style*="pointer-events"] {
+    overflow: hidden;
+  }
+
   /* Placeholder styling for contentEditable div */
   [contenteditable][data-placeholder]:empty::before {
     content: attr(data-placeholder);
