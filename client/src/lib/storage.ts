@@ -594,6 +594,8 @@ export function clearAllData() {
     healthData: {},
     waterIntake: {},
   });
+  // Force save to localStorage immediately
+  useAppStore.getState().saveState();
 }
 
 // App initialization - load stored state
