@@ -138,6 +138,94 @@ export function loadCategories(): string[] {
   return data ? JSON.parse(data) : ['Carboidrati', 'Frutta', 'Latticini', 'Proteine', 'Verdure'];
 }
 
+// Meals Storage
+export interface MealIngredient {
+  foodId: string;
+  grams: number;
+  name?: string;
+}
+
+export interface Meal {
+  id: string;
+  name: string;
+  ingredients: MealIngredient[];
+  isFavorite: boolean;
+  totalCalories: number;
+  totalProtein: number;
+  totalCarbs: number;
+  totalFat: number;
+  ingredientCount: number;
+}
+
+export function calculateMealNutrition(meal: Meal, foods: FoodItem[]): Meal {
+  let totalCalories = 0;
+  let totalProtein = 0;
+  let totalCarbs = 0;
+  let totalFat = 0;
+
+  meal.ingredients.forEach(ing => {
+    const food = foods.find(f => f.id === ing.foodId);
+    if (food) {
+      const multiplier = ing.grams / 100;
+      totalCalories += food.calories * multiplier;
+      totalProtein += food.protein * multiplier;
+      totalCarbs += food.carbs * multiplier;
+      totalFat += food.fat * multiplier;
+    }
+  });
+
+  return {
+    ...meal,
+    totalCalories: Math.round(totalCalories),
+    totalProtein: Math.round(totalProtein * 10) / 10,
+    totalCarbs: Math.round(totalCarbs * 10) / 10,
+    totalFat: Math.round(totalFat * 10) / 10,
+    ingredientCount: meal.ingredients.length,
+  };
+}
+
+export function saveMeals(meals: Meal[]) {
+  localStorage.setItem('nutritrack_meals', JSON.stringify(meals));
+}
+
+export function loadMeals(): Meal[] {
+  const data = localStorage.getItem('nutritrack_meals');
+  return data ? JSON.parse(data) : [];
+}
+
+// Weekly meal assignments (day of week -> meal id)
+export interface WeeklyAssignment {
+  dayOfWeek: number;
+  mealId: string;
+  mealName: string;
+}
+
+export function saveWeeklyAssignments(assignments: WeeklyAssignment[]) {
+  localStorage.setItem('nutritrack_weekly_assignments', JSON.stringify(assignments));
+}
+
+export function loadWeeklyAssignments(): WeeklyAssignment[] {
+  const data = localStorage.getItem('nutritrack_weekly_assignments');
+  return data ? JSON.parse(data) : [];
+}
+
+export function assignMealToDay(dayOfWeek: number, mealId: string, mealName: string) {
+  const assignments = loadWeeklyAssignments();
+  const existing = assignments.findIndex(a => a.dayOfWeek === dayOfWeek);
+  if (existing >= 0) {
+    assignments[existing] = { dayOfWeek, mealId, mealName };
+  } else {
+    assignments.push({ dayOfWeek, mealId, mealName });
+  }
+  saveWeeklyAssignments(assignments);
+}
+
+export function removeMealFromDay(dayOfWeek: number) {
+  const assignments = loadWeeklyAssignments();
+  const filtered = assignments.filter(a => a.dayOfWeek !== dayOfWeek);
+  saveWeeklyAssignments(filtered);
+}
+
 // Badge Storage
 export function saveBadges(badges: Badge[]) {
   localStorage.setItem(STORAGE_KEYS.badges, JSON.stringify(badges));
