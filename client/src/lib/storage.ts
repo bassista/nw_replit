@@ -379,5 +379,20 @@ export function importAllData(data: any) {
 }
 
 export function clearAllData() {
+  // Remove all keys in STORAGE_KEYS
   Object.values(STORAGE_KEYS).forEach(key => localStorage.removeItem(key));
+  
+  // Remove additional static keys
+  localStorage.removeItem('nutritrack_meals');
+  localStorage.removeItem('nutritrack_weekly_assignments');
+  
+  // Remove all dynamic water intake keys
+  const keysToRemove: string[] = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key?.startsWith('nutritrack_water_')) {
+      keysToRemove.push(key);
+    }
+  }
+  keysToRemove.forEach(key => localStorage.removeItem(key));
 }
