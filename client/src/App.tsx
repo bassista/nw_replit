@@ -8,6 +8,7 @@ import BottomNav from "@/components/BottomNav";
 import Home from "@/pages/Home";
 import Foods from "@/pages/Foods";
 import Meals from "@/pages/Meals";
+import Health from "@/pages/Health";
 import ShoppingLists from "@/pages/ShoppingLists";
 import Stats from "@/pages/Stats";
 import Settings from "@/pages/Settings";
@@ -19,6 +20,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/foods" component={Foods} />
       <Route path="/meals" component={Meals} />
+      <Route path="/health" component={Health} />
       <Route path="/lists" component={ShoppingLists} />
       <Route path="/stats" component={Stats} />
       <Route path="/settings" component={Settings} />

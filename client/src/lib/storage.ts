@@ -73,6 +73,42 @@ export function getWaterIntake(date: string): number {
   return data ? parseInt(data) : 0;
 }
 
+// Health Data Storage
+export interface HealthData {
+  date: string;
+  weight?: number;
+  glucose?: number;
+  insulin?: number;
+}
+
+export function saveHealthData(date: string, health: Partial<HealthData>) {
+  const healthKey = `nutritrack_health_${date}`;
+  const existing = localStorage.getItem(healthKey);
+  const current = existing ? JSON.parse(existing) : { date };
+  const updated = { ...current, ...health, date };
+  localStorage.setItem(healthKey, JSON.stringify(updated));
+}
+
+export function getHealthData(date: string): HealthData {
+  const healthKey = `nutritrack_health_${date}`;
+  const data = localStorage.getItem(healthKey);
+  return data ? JSON.parse(data) : { date };
+}
+
+export function getAllHealthData(): HealthData[] {
+  const allHealth: HealthData[] = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key?.startsWith('nutritrack_health_')) {
+      const data = localStorage.getItem(key);
+      if (data) {
+        allHealth.push(JSON.parse(data));
+      }
+    }
+  }
+  return allHealth.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+}
+
 // Shopping Lists Storage
 export interface ShoppingList {
   id: string;
@@ -460,12 +496,16 @@ export function exportAllData() {
     }
   }
 
+  // Collect all health data
+  const healthData: HealthData[] = getAllHealthData();
+
   return {
     foods: loadFoods(),
     dailyMeals: loadDailyMeals(),
     meals: loadMeals(),
     weeklyAssignments: loadWeeklyAssignments(),
     waterIntake: waterIntake,
+    healthData: healthData,
     shoppingLists: loadShoppingLists(),
     settings: loadSettings(),
     categories: loadCategories(),
@@ -482,6 +522,11 @@ export function importAllData(data: any) {
   if (data.waterIntake && typeof data.waterIntake === 'object') {
     Object.entries(data.waterIntake).forEach(([date, ml]) => {
       saveWaterIntake(date, ml as number);
+    });
+  }
+  if (data.healthData && Array.isArray(data.healthData)) {
+    data.healthData.forEach((health: HealthData) => {
+      saveHealthData(health.date, health);
     });
   }
   if (data.shoppingLists) saveShoppingLists(data.shoppingLists);

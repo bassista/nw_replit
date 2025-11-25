@@ -50,6 +50,9 @@ export default function Home() {
   const [showAutoMealCopyDialog, setShowAutoMealCopyDialog] = useState(false);
   const [autoMealToCopy, setAutoMealToCopy] = useState<Meal | null>(null);
   const [availableMeals, setAvailableMeals] = useState<Meal[]>([]);
+  const [showCopyFromPastDialog, setShowCopyFromPastDialog] = useState(false);
+  const [daysBackInput, setDaysBackInput] = useState('1');
+  const [showClearDayConfirm, setShowClearDayConfirm] = useState(false);
   const { t } = useLanguage();
 
   const dateKey = format(currentDate, 'yyyy-MM-dd');
@@ -195,6 +198,57 @@ export default function Home() {
     });
 
     setShowSelectMealDialog(false);
+  };
+
+  const handleCopyFromPast = () => {
+    const daysBack = parseInt(daysBackInput);
+    if (isNaN(daysBack) || daysBack < 1) {
+      toast({
+        title: "Valore non valido",
+        description: "Inserisci un numero positivo di giorni.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const pastDate = subDays(currentDate, daysBack);
+    const pastDateKey = format(pastDate, 'yyyy-MM-dd');
+    const pastItems = getDailyMeal(pastDateKey);
+
+    if (pastItems.length === 0) {
+      toast({
+        title: "Nessun alimento trovato",
+        description: `Nessun alimento nel diario di ${daysBack} giorno/i fa.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Copy items with new IDs
+    pastItems.forEach(item => {
+      const newItem: DailyMealItem = {
+        ...item,
+        id: Date.now().toString() + Math.random(),
+      };
+      setDailyMealItems(prev => [...prev, newItem]);
+    });
+
+    toast({
+      title: "Alimenti copiati",
+      description: `${pastItems.length} ${pastItems.length === 1 ? 'alimento' : 'alimenti'} copiato/i da ${daysBack} giorno/i fa.`,
+    });
+
+    setShowCopyFromPastDialog(false);
+    setDaysBackInput('1');
+  };
+
+  const handleClearDay = () => {
+    setDailyMealItems([]);
+    toast({
+      title: "Diario pulito",
+      description: "Tutti gli alimenti sono stati rimossi.",
+    });
+    setShowClearDayConfirm(false);
   };
 
   const filteredFoods = availableFoods.filter(food =>
@@ -461,6 +515,26 @@ export default function Home() {
                 Copia dal Pasto
               </Button>
             )}
+            <Button
+              onClick={() => setShowCopyFromPastDialog(true)}
+              variant="outline"
+              className="w-full"
+              data-testid="button-copy-from-past"
+            >
+              <Copy className="w-4 h-4 mr-2" />
+              Copia da Giorni Passati
+            </Button>
+            {dailyMealItems.length > 0 && (
+              <Button
+                onClick={() => setShowClearDayConfirm(true)}
+                variant="destructive"
+                className="w-full"
+                data-testid="button-clear-day"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Pulisci Giorno
+              </Button>
+            )}
           </div>
         </Card>
       </div>
@@ -691,6 +765,79 @@ export default function Home() {
             data-testid="button-confirm-auto-copy"
           >
             Sì, copia
+          </AlertDialogAction>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Copy from Past Dialog */}
+      <Dialog open={showCopyFromPastDialog} onOpenChange={setShowCopyFromPastDialog}>
+        <DialogContent className="w-96">
+          <DialogHeader>
+            <DialogTitle>Copia da Giorni Passati</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <Label className="text-sm font-medium mb-2 block">
+                Quanti giorni fa?
+              </Label>
+              <Input
+                type="number"
+                min="1"
+                max="365"
+                value={daysBackInput}
+                onChange={(e) => setDaysBackInput(e.target.value)}
+                placeholder="Inserisci il numero di giorni..."
+                data-testid="input-days-back"
+                autoFocus
+              />
+              <p className="text-xs text-muted-foreground mt-2">
+                Ad esempio: 1 = ieri, 7 = una settimana fa
+              </p>
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => {
+                setShowCopyFromPastDialog(false);
+                setDaysBackInput('1');
+              }}
+              data-testid="button-cancel-copy-past"
+            >
+              Annulla
+            </Button>
+            <Button
+              variant="default"
+              className="flex-1"
+              onClick={handleCopyFromPast}
+              data-testid="button-confirm-copy-past"
+            >
+              Copia
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Clear Day Confirmation Dialog */}
+      <AlertDialog open={showClearDayConfirm} onOpenChange={setShowClearDayConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Pulisci Diario?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Sei sicuro di voler rimuovere tutti gli alimenti da oggi? Questa azione non può essere annullata.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogCancel data-testid="button-cancel-clear-day">
+            Annulla
+          </AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleClearDay}
+            data-testid="button-confirm-clear-day"
+          >
+            Sì, pulisci
           </AlertDialogAction>
         </AlertDialogContent>
       </AlertDialog>
