@@ -49,7 +49,13 @@ export default function ShoppingListCard({
       <div className="p-4 bg-muted/50 flex items-center justify-between gap-2">
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <GripVertical className="w-5 h-5 text-muted-foreground flex-shrink-0 cursor-grab active:cursor-grabbing" />
-          <h3 className="font-semibold text-foreground">{list.name}</h3>
+          <h3 
+            className={`font-semibold text-foreground flex-1 min-w-0 ${!list.isPredefined ? 'cursor-pointer hover-elevate rounded px-2 py-1' : ''}`}
+            onClick={() => !list.isPredefined && onRenameList?.(list.id)}
+            data-testid={`list-name-${list.id}`}
+          >
+            {list.name}
+          </h3>
           {list.isPredefined && (
             <Badge variant="secondary" className="text-xs flex-shrink-0">Predefinita</Badge>
           )}
