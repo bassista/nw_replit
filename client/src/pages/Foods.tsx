@@ -18,12 +18,13 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Search, Heart, Plus, ChevronLeft, ChevronRight, Barcode, Loader } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Search, Heart, Plus, ChevronLeft, ChevronRight, Barcode, Loader, X } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 import type { FoodItem } from "@shared/schema";
 import { useLanguage } from "@/lib/languageContext";
 import { loadFoods, saveFoods, loadCategories, saveCategories, loadSettings } from "@/lib/storage";
 import { useToast } from "@/hooks/use-toast";
+import { Html5QrcodeScanner } from "html5-qrcode";
 
 export default function Foods() {
   const { toast } = useToast();
@@ -39,6 +40,8 @@ export default function Foods() {
   const [barcodeScannerOpen, setBarcodeScannerOpen] = useState(false);
   const [barcodeInput, setBarcodeInput] = useState("");
   const [isScanning, setIsScanning] = useState(false);
+  const [cameraActive, setCameraActive] = useState(false);
+  const scannerRef = useRef<Html5QrcodeScanner | null>(null);
   const { t } = useLanguage();
 
   // Load data on mount
@@ -128,26 +131,17 @@ export default function Foods() {
     setDialogOpen(true);
   };
 
-  const handleScanBarcode = async () => {
-    if (!barcodeInput.trim()) {
-      toast({
-        title: "Codice mancante",
-        description: "Inserisci un codice a barre valido.",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const searchProductByBarcode = async (code: string) => {
     setIsScanning(true);
     try {
       const response = await fetch(
-        `https://world.openfoodfacts.org/api/v0/product/${barcodeInput}.json`
+        `https://world.openfoodfacts.org/api/v0/product/${code}.json`
       );
       
       if (!response.ok || response.status === 404) {
         toast({
           title: "Prodotto non trovato",
-          description: `Nessun prodotto trovato con codice ${barcodeInput}.`,
+          description: `Nessun prodotto trovato con codice ${code}.`,
           variant: "destructive",
         });
         setIsScanning(false);
@@ -183,8 +177,14 @@ export default function Foods() {
 
       setFoods(prev => [...prev, newFood]);
       setBarcodeInput("");
+      setCameraActive(false);
       setBarcodeScannerOpen(false);
       setIsScanning(false);
+
+      // Stoppa lo scanner
+      if (scannerRef.current) {
+        scannerRef.current.clear();
+      }
 
       toast({
         title: "Prodotto aggiunto",
@@ -199,6 +199,53 @@ export default function Foods() {
       });
       setIsScanning(false);
     }
+  };
+
+  const handleStartCamera = () => {
+    setCameraActive(true);
+    
+    // Inizializza lo scanner
+    const scanner = new Html5QrcodeScanner(
+      "qr-reader",
+      { fps: 10, qrbox: { width: 250, height: 250 } },
+      false
+    );
+
+    scannerRef.current = scanner;
+
+    scanner.render(
+      (decodedText) => {
+        // Barcode rilevato
+        setBarcodeInput(decodedText);
+        scanner.clear();
+        setCameraActive(false);
+        searchProductByBarcode(decodedText);
+      },
+      (error) => {
+        // Errore durante la scansione
+        console.error("QR Scanner error:", error);
+      }
+    );
+  };
+
+  const handleStopCamera = () => {
+    if (scannerRef.current) {
+      scannerRef.current.clear();
+    }
+    setCameraActive(false);
+  };
+
+  const handleScanBarcode = async () => {
+    if (!barcodeInput.trim()) {
+      toast({
+        title: "Codice mancante",
+        description: "Inserisci un codice a barre valido.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    await searchProductByBarcode(barcodeInput);
   };
 
   return (
@@ -333,63 +380,109 @@ export default function Foods() {
       />
 
       {/* Barcode Scanner Dialog */}
-      <Dialog open={barcodeScannerOpen} onOpenChange={setBarcodeScannerOpen}>
+      <Dialog open={barcodeScannerOpen} onOpenChange={(open) => {
+        if (!open) {
+          handleStopCamera();
+        }
+        setBarcodeScannerOpen(open);
+        if (!open) {
+          setBarcodeInput("");
+        }
+      }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Scansiona Codice a Barre</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Codice a Barre (EAN/UPC)</label>
-              <Input
-                type="text"
-                placeholder="Inserisci o scansiona un codice a barre..."
-                value={barcodeInput}
-                onChange={(e) => setBarcodeInput(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    handleScanBarcode();
-                  }
-                }}
-                data-testid="input-barcode"
-                disabled={isScanning}
-                autoFocus
-              />
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Usa uno scanner barcode fisico oppure inserisci manualmente il codice EAN/UPC a 12-13 cifre.
-            </p>
+            {cameraActive ? (
+              <>
+                <div 
+                  id="qr-reader"
+                  className="rounded-lg overflow-hidden bg-black"
+                  style={{ width: "100%", height: "300px" }}
+                />
+                <p className="text-xs text-muted-foreground text-center">
+                  Posiziona il codice a barre davanti alla fotocamera
+                </p>
+              </>
+            ) : (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Codice a Barre (EAN/UPC)</label>
+                <Input
+                  type="text"
+                  placeholder="Inserisci manualmente il codice..."
+                  value={barcodeInput}
+                  onChange={(e) => setBarcodeInput(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      handleScanBarcode();
+                    }
+                  }}
+                  data-testid="input-barcode"
+                  disabled={isScanning || cameraActive}
+                  autoFocus
+                />
+                <p className="text-xs text-muted-foreground">
+                  Clicca su "Usa Fotocamera" oppure inserisci manualmente il codice EAN/UPC a 12-13 cifre.
+                </p>
+              </div>
+            )}
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="flex gap-2">
             <Button
               variant="outline"
               onClick={() => {
+                handleStopCamera();
                 setBarcodeScannerOpen(false);
                 setBarcodeInput("");
               }}
               disabled={isScanning}
+              data-testid="button-cancel-barcode"
             >
-              Annulla
+              {cameraActive ? "Chiudi" : "Annulla"}
             </Button>
-            <Button
-              onClick={handleScanBarcode}
-              disabled={isScanning || !barcodeInput.trim()}
-              data-testid="button-search-barcode"
-            >
-              {isScanning ? (
-                <>
-                  <Loader className="w-4 h-4 mr-2 animate-spin" />
-                  Ricerca...
-                </>
-              ) : (
-                <>
+            
+            {!cameraActive ? (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={handleStartCamera}
+                  disabled={isScanning}
+                  data-testid="button-use-camera"
+                >
                   <Barcode className="w-4 h-4 mr-2" />
-                  Cerca Prodotto
-                </>
-              )}
-            </Button>
+                  Usa Fotocamera
+                </Button>
+                <Button
+                  onClick={handleScanBarcode}
+                  disabled={isScanning || !barcodeInput.trim()}
+                  data-testid="button-search-barcode"
+                >
+                  {isScanning ? (
+                    <>
+                      <Loader className="w-4 h-4 mr-2 animate-spin" />
+                      Ricerca...
+                    </>
+                  ) : (
+                    <>
+                      <Barcode className="w-4 h-4 mr-2" />
+                      Cerca
+                    </>
+                  )}
+                </Button>
+              </>
+            ) : (
+              <Button
+                variant="destructive"
+                onClick={handleStopCamera}
+                disabled={isScanning}
+              >
+                <X className="w-4 h-4 mr-2" />
+                Ferma
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
