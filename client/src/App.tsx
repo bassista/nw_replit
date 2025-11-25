@@ -1,9 +1,11 @@
 import { Switch, Route } from "wouter";
+import { useState, useEffect } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider } from "@/lib/languageContext";
+import { useAppStore } from "@/context/AppStore";
 import BottomNav from "@/components/BottomNav";
 import Home from "@/pages/Home";
 import Foods from "@/pages/Foods";
@@ -30,6 +32,20 @@ function Router() {
 }
 
 function App() {
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  useEffect(() => {
+    const loadAppState = async () => {
+      await useAppStore.getState().loadState();
+      setIsLoaded(true);
+    };
+    loadAppState();
+  }, []);
+
+  if (!isLoaded) {
+    return <div className="min-h-screen bg-background" />;
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>

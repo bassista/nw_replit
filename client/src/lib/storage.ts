@@ -1,48 +1,49 @@
+// NEW: Import from Zustand store
+import { useAppStore } from "@/context/AppStore";
 import type { FoodItem, Badge } from "@shared/schema";
+import type {
+  DailyMealItem,
+  DailyMeal,
+  HealthData,
+  MealIngredient,
+  Meal,
+  WeeklyAssignment,
+  ShoppingList,
+  Settings,
+} from "@/context/types";
+import { defaultAppData } from "@/context/types";
 
-const STORAGE_KEYS = {
-  foods: 'nutritrack_foods',
-  dailyMeals: 'nutritrack_daily_meals',
-  shoppingLists: 'nutritrack_shopping_lists',
-  settings: 'nutritrack_settings',
-  categories: 'nutritrack_categories',
-  badges: 'nutritrack_badges',
-} as const;
+// Re-export types for backward compatibility
+export type {
+  DailyMealItem,
+  DailyMeal,
+  HealthData,
+  MealIngredient,
+  Meal,
+  WeeklyAssignment,
+  ShoppingList,
+  Settings,
+};
+
+// ==================== WRAPPER FUNCTIONS ====================
+// These functions wrap the Zustand store to maintain backward compatibility
 
 // Foods Storage
 export function saveFoods(foods: FoodItem[]) {
-  localStorage.setItem(STORAGE_KEYS.foods, JSON.stringify(foods));
+  useAppStore.setState({ foods });
 }
 
 export function loadFoods(): FoodItem[] {
-  const data = localStorage.getItem(STORAGE_KEYS.foods);
-  return data ? JSON.parse(data) : [];
+  return useAppStore.getState().foods;
 }
 
 // Daily Meals Storage
-export interface DailyMealItem {
-  id: string;
-  foodId: string;
-  name: string;
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-  grams: number;
-}
-
-export interface DailyMeal {
-  date: string;
-  items: DailyMealItem[];
-}
-
 export function saveDailyMeals(meals: DailyMeal[]) {
-  localStorage.setItem(STORAGE_KEYS.dailyMeals, JSON.stringify(meals));
+  useAppStore.setState({ dailyMeals: meals });
 }
 
 export function loadDailyMeals(): DailyMeal[] {
-  const data = localStorage.getItem(STORAGE_KEYS.dailyMeals);
-  return data ? JSON.parse(data) : [];
+  return useAppStore.getState().dailyMeals;
 }
 
 export function saveDailyMeal(date: string, items: DailyMeal['items']) {
@@ -63,84 +64,44 @@ export function getDailyMeal(date: string): DailyMeal['items'] {
 
 // Water Intake Storage
 export function saveWaterIntake(date: string, ml: number) {
-  const waterKey = `nutritrack_water_${date}`;
-  localStorage.setItem(waterKey, ml.toString());
+  const state = useAppStore.getState();
+  const updated = { ...state.waterIntake, [date]: ml };
+  useAppStore.setState({ waterIntake: updated });
 }
 
 export function getWaterIntake(date: string): number {
-  const waterKey = `nutritrack_water_${date}`;
-  const data = localStorage.getItem(waterKey);
-  return data ? parseInt(data) : 0;
+  const waterIntake = useAppStore.getState().waterIntake;
+  return waterIntake[date] || 0;
 }
 
 // Health Data Storage
-export interface HealthData {
-  date: string;
-  weight?: number;
-  glucose?: number;
-  insulin?: number;
-}
-
 export function saveHealthData(date: string, health: Partial<HealthData>) {
-  const healthKey = `nutritrack_health_${date}`;
-  const existing = localStorage.getItem(healthKey);
-  const current = existing ? JSON.parse(existing) : { date };
-  const updated = { ...current, ...health, date };
-  localStorage.setItem(healthKey, JSON.stringify(updated));
+  const state = useAppStore.getState();
+  const existing = state.healthData[date] || { date };
+  const updated = { ...state.healthData, [date]: { ...existing, ...health, date } };
+  useAppStore.setState({ healthData: updated });
 }
 
 export function getHealthData(date: string): HealthData {
-  const healthKey = `nutritrack_health_${date}`;
-  const data = localStorage.getItem(healthKey);
-  return data ? JSON.parse(data) : { date };
+  const healthData = useAppStore.getState().healthData;
+  return healthData[date] || { date };
 }
 
 export function getAllHealthData(): HealthData[] {
-  const allHealth: HealthData[] = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key?.startsWith('nutritrack_health_')) {
-      const data = localStorage.getItem(key);
-      if (data) {
-        allHealth.push(JSON.parse(data));
-      }
-    }
-  }
-  return allHealth.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const healthData = useAppStore.getState().healthData;
+  return Object.values(healthData).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 }
 
 // Shopping Lists Storage
-export interface ShoppingList {
-  id: string;
-  name: string;
-  items: Array<{ id: string; name: string; checked: boolean }>;
-  isPredefined: boolean;
-}
-
 export function saveShoppingLists(lists: ShoppingList[]) {
-  localStorage.setItem(STORAGE_KEYS.shoppingLists, JSON.stringify(lists));
+  useAppStore.setState({ shoppingLists: lists });
 }
 
 export function loadShoppingLists(): ShoppingList[] {
-  const data = localStorage.getItem(STORAGE_KEYS.shoppingLists);
-  return data ? JSON.parse(data) : [];
+  return useAppStore.getState().shoppingLists;
 }
 
 // Settings Storage
-export interface Settings {
-  itemsPerPage: number;
-  waterTargetMl: number;
-  glassCapacityMl: number;
-  waterReminderEnabled: boolean;
-  waterReminderIntervalMinutes: number;
-  waterReminderStartHour: number;
-  waterReminderEndHour: number;
-  calorieGoal: number;
-  proteinGoal: number;
-  carbsGoal: number;
-  fatGoal: number;
-}
-
 export const defaultSettings: Settings = {
   itemsPerPage: 8,
   waterTargetMl: 2000,
@@ -156,43 +117,23 @@ export const defaultSettings: Settings = {
 };
 
 export function saveSettings(settings: Settings) {
-  localStorage.setItem(STORAGE_KEYS.settings, JSON.stringify(settings));
+  useAppStore.setState({ settings });
 }
 
 export function loadSettings(): Settings {
-  const data = localStorage.getItem(STORAGE_KEYS.settings);
-  return data ? JSON.parse(data) : defaultSettings;
+  return useAppStore.getState().settings;
 }
 
 // Categories Storage
 export function saveCategories(categories: string[]) {
-  localStorage.setItem(STORAGE_KEYS.categories, JSON.stringify(categories));
+  useAppStore.setState({ categories });
 }
 
 export function loadCategories(): string[] {
-  const data = localStorage.getItem(STORAGE_KEYS.categories);
-  return data ? JSON.parse(data) : ['Carboidrati', 'Frutta', 'Latticini', 'Proteine', 'Verdure'];
+  return useAppStore.getState().categories;
 }
 
 // Meals Storage
-export interface MealIngredient {
-  foodId: string;
-  grams: number;
-  name?: string;
-}
-
-export interface Meal {
-  id: string;
-  name: string;
-  ingredients: MealIngredient[];
-  isFavorite: boolean;
-  totalCalories: number;
-  totalProtein: number;
-  totalCarbs: number;
-  totalFat: number;
-  ingredientCount: number;
-}
-
 export function calculateMealNutrition(meal: Meal, foods: FoodItem[]): Meal {
   let totalCalories = 0;
   let totalProtein = 0;
@@ -221,28 +162,20 @@ export function calculateMealNutrition(meal: Meal, foods: FoodItem[]): Meal {
 }
 
 export function saveMeals(meals: Meal[]) {
-  localStorage.setItem('nutritrack_meals', JSON.stringify(meals));
+  useAppStore.setState({ meals });
 }
 
 export function loadMeals(): Meal[] {
-  const data = localStorage.getItem('nutritrack_meals');
-  return data ? JSON.parse(data) : [];
+  return useAppStore.getState().meals;
 }
 
-// Weekly meal assignments (day of week -> meal id)
-export interface WeeklyAssignment {
-  dayOfWeek: number;
-  mealId: string;
-  mealName: string;
-}
-
+// Weekly meal assignments
 export function saveWeeklyAssignments(assignments: WeeklyAssignment[]) {
-  localStorage.setItem('nutritrack_weekly_assignments', JSON.stringify(assignments));
+  useAppStore.setState({ weeklyAssignments: assignments });
 }
 
 export function loadWeeklyAssignments(): WeeklyAssignment[] {
-  const data = localStorage.getItem('nutritrack_weekly_assignments');
-  return data ? JSON.parse(data) : [];
+  return useAppStore.getState().weeklyAssignments;
 }
 
 export function assignMealToDay(dayOfWeek: number, mealId: string, mealName: string) {
@@ -264,12 +197,11 @@ export function removeMealFromDay(dayOfWeek: number) {
 
 // Badge Storage
 export function saveBadges(badges: Badge[]) {
-  localStorage.setItem(STORAGE_KEYS.badges, JSON.stringify(badges));
+  useAppStore.setState({ badges });
 }
 
 export function loadBadges(): Badge[] {
-  const data = localStorage.getItem(STORAGE_KEYS.badges);
-  return data ? JSON.parse(data) : [];
+  return useAppStore.getState().badges;
 }
 
 export function unlockBadge(badgeId: string) {
@@ -373,12 +305,10 @@ export function checkPerfectWeek(settings: Settings): boolean {
 export function exportFoodsAsCSV(): string {
   const foods = loadFoods();
   
-  // Header
   const header = 'id,serving_size_g,calories,protein,carbohydrates,fat,fiber,sugar,sodium,name_category';
   
-  // Rows
   const rows = foods.map(food => {
-    const serving_size_g = 100; // default serving size
+    const serving_size_g = 100;
     const calories = food.calories;
     const protein = food.protein;
     const carbohydrates = food.carbs;
@@ -387,8 +317,6 @@ export function exportFoodsAsCSV(): string {
     const sugar = food.sugar || 0;
     const sodium = food.sodium || 0;
     
-    // Build name_category field with multilingual format
-    // Format: it=Name_IT:Category_IT;en=Name_EN:Category_EN
     const name_category = `"it=${food.name}:${food.category || 'Senza categoria'};en=${food.name}:${food.category || 'Uncategorized'}"`;
     
     return `${food.id},${serving_size_g},${calories},${protein},${carbohydrates},${fat},${fiber},${sugar},${sodium},${name_category}`;
@@ -397,39 +325,19 @@ export function exportFoodsAsCSV(): string {
   return [header, ...rows].join('\n');
 }
 
-export function importFoodsFromCSV(csvContent: string): FoodItem[] {
-  const lines = csvContent.trim().split('\n');
-  if (lines.length < 2) throw new Error('CSV file is empty or invalid');
-  
+// CSV Import for Foods
+export function importFoodsFromCSV(csv: string) {
+  const lines = csv.trim().split('\n');
+  if (lines.length < 2) {
+    throw new Error('CSV file is empty or invalid');
+  }
+
   const foods: FoodItem[] = [];
-  
-  // Skip header row
   for (let i = 1; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (!line) continue;
-    
+    const line = lines[i];
+    const fields = line.split(',').map(f => f.trim().replace(/^"(.*)"$/, '$1'));
+
     try {
-      // Parse CSV line, handling quoted fields
-      const fields: string[] = [];
-      let current = '';
-      let inQuotes = false;
-      
-      for (let j = 0; j < line.length; j++) {
-        const char = line[j];
-        
-        if (char === '"') {
-          inQuotes = !inQuotes;
-        } else if (char === ',' && !inQuotes) {
-          fields.push(current.trim());
-          current = '';
-        } else {
-          current += char;
-        }
-      }
-      fields.push(current.trim());
-      
-      if (fields.length < 10) continue;
-      
       const id = fields[0];
       const calories = parseFloat(fields[2]);
       const protein = parseFloat(fields[3]);
@@ -438,25 +346,27 @@ export function importFoodsFromCSV(csvContent: string): FoodItem[] {
       const fiber = parseFloat(fields[6]) || 0;
       const sugar = parseFloat(fields[7]) || 0;
       const sodium = parseFloat(fields[8]) || 0;
-      
-      // Parse name_category field
-      let name = '';
+
+      const name_category = fields[9];
+      let name = 'Unknown';
       let category = 'Senza categoria';
-      const nameCategory = fields[9].replace(/^"|"$/g, ''); // Remove quotes
-      
-      // Extract Italian name and category
-      const parts = nameCategory.split(';');
-      for (const part of parts) {
-        if (part.startsWith('it=')) {
-          const [n, c] = part.substring(3).split(':');
-          name = n || '';
-          category = c || 'Senza categoria';
-          break;
+
+      if (name_category) {
+        const parts = name_category.split(';');
+        for (const part of parts) {
+          if (part.startsWith('it=')) {
+            const [n, c] = part.slice(3).split(':');
+            name = n || name;
+            category = c || category;
+          }
+          if (part.startsWith('en=')) {
+            const [n, c] = part.slice(3).split(':');
+            if (name === 'Unknown') name = n || name;
+            if (category === 'Senza categoria') category = c || category;
+          }
         }
       }
-      
-      if (!name) continue;
-      
+
       const food: FoodItem = {
         id,
         name,
@@ -470,103 +380,75 @@ export function importFoodsFromCSV(csvContent: string): FoodItem[] {
         sodium,
         isFavorite: false,
       };
-      
+
       foods.push(food);
     } catch (error) {
-      console.error(`Error parsing CSV line ${i}:`, error);
-      continue;
+      console.error(`Failed to parse row ${i}:`, error);
     }
   }
-  
-  return foods;
+
+  if (foods.length === 0) {
+    throw new Error('No valid foods found in CSV file');
+  }
+
+  saveFoods(foods);
 }
 
-// Export/Import all data
-export function exportAllData() {
-  // Collect all water intake data
-  const waterIntake: { [key: string]: number } = {};
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key?.startsWith('nutritrack_water_')) {
-      const date = key.replace('nutritrack_water_', '');
-      const value = localStorage.getItem(key);
-      if (value) {
-        waterIntake[date] = parseInt(value);
-      }
-    }
-  }
-
-  // Collect all health data
-  const healthData: HealthData[] = getAllHealthData();
-
-  return {
-    foods: loadFoods(),
-    dailyMeals: loadDailyMeals(),
-    meals: loadMeals(),
-    weeklyAssignments: loadWeeklyAssignments(),
-    waterIntake: waterIntake,
-    healthData: healthData,
-    shoppingLists: loadShoppingLists(),
-    settings: loadSettings(),
-    categories: loadCategories(),
-    badges: loadBadges(),
-    exportedAt: new Date().toISOString(),
+// Data Export/Import
+export async function exportData(): Promise<string> {
+  const state = useAppStore.getState();
+  const data = {
+    foods: state.foods,
+    dailyMeals: state.dailyMeals,
+    meals: state.meals,
+    weeklyAssignments: state.weeklyAssignments,
+    shoppingLists: state.shoppingLists,
+    settings: state.settings,
+    categories: state.categories,
+    badges: state.badges,
+    healthData: state.healthData,
+    waterIntake: state.waterIntake,
   };
+  return JSON.stringify(data, null, 2);
 }
 
-export function importAllData(data: any) {
+export async function importData(json: string) {
+  const data = JSON.parse(json);
+  
   if (data.foods) saveFoods(data.foods);
   if (data.dailyMeals) saveDailyMeals(data.dailyMeals);
   if (data.meals) saveMeals(data.meals);
   if (data.weeklyAssignments) saveWeeklyAssignments(data.weeklyAssignments);
-  if (data.waterIntake && typeof data.waterIntake === 'object') {
-    Object.entries(data.waterIntake).forEach(([date, ml]) => {
-      saveWaterIntake(date, ml as number);
-    });
-  }
-  if (data.healthData && Array.isArray(data.healthData)) {
-    data.healthData.forEach((health: HealthData) => {
-      saveHealthData(health.date, health);
-    });
-  }
   if (data.shoppingLists) saveShoppingLists(data.shoppingLists);
   if (data.settings) saveSettings(data.settings);
   if (data.categories) saveCategories(data.categories);
   if (data.badges) saveBadges(data.badges);
+  if (data.healthData) useAppStore.setState({ healthData: data.healthData });
+  if (data.waterIntake) useAppStore.setState({ waterIntake: data.waterIntake });
 }
 
+// Clear All Data
 export function clearAllData() {
-  // Remove all keys in STORAGE_KEYS EXCEPT shopping lists
-  Object.entries(STORAGE_KEYS).forEach(([, key]) => {
-    if (key !== STORAGE_KEYS.shoppingLists) {
-      localStorage.removeItem(key);
-    }
+  useAppStore.setState({
+    foods: [],
+    dailyMeals: [],
+    meals: [],
+    weeklyAssignments: [],
+    shoppingLists: [],
+    settings: defaultSettings,
+    categories: defaultAppData.categories,
+    badges: [],
+    healthData: {},
+    waterIntake: {},
   });
-  
-  // Remove additional static keys
-  localStorage.removeItem('nutritrack_meals');
-  localStorage.removeItem('nutritrack_weekly_assignments');
-  
-  // Remove all dynamic water intake keys
-  const keysToRemove: string[] = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key?.startsWith('nutritrack_water_') || key?.startsWith('nutritrack_health_') || key?.startsWith('nutritrack_meal_auto_copy_prompt_')) {
-      keysToRemove.push(key);
-    }
-  }
-  keysToRemove.forEach(key => localStorage.removeItem(key));
-
-  // Clear shopping lists but keep predefined ones empty
-  const currentLists = loadShoppingLists();
-  const clearedLists = currentLists
-    .filter(list => list.isPredefined) // Keep only predefined lists
-    .map(list => ({ ...list, items: [] })); // Empty their items
-  
-  if (clearedLists.length > 0) {
-    saveShoppingLists(clearedLists);
-  } else {
-    // If no predefined lists exist, remove the key entirely
-    localStorage.removeItem(STORAGE_KEYS.shoppingLists);
-  }
 }
+
+// App initialization - load stored state
+export async function initializeApp() {
+  const store = useAppStore.getState();
+  await store.loadState();
+}
+
+// Backward compatibility aliases
+export const exportAllData = exportData;
+export const importAllData = importData;
