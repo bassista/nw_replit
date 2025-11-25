@@ -5,6 +5,13 @@ import AddMealDialog from "@/components/AddMealDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -204,34 +211,6 @@ export default function Meals() {
           {showOnlyFavorites ? 'Mostrando: Solo Preferiti' : 'Mostra Solo Preferiti'}
         </Button>
 
-        {/* Select Day Meal Dialog */}
-        {selectedDayForMeal !== null && (
-          <div className="space-y-3 p-4 bg-muted/50 rounded-md">
-            <p className="text-sm font-medium">Seleziona un pasto per {['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'][selectedDayForMeal]}</p>
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {meals.map(meal => (
-                <Button
-                  key={meal.id}
-                  variant="outline"
-                  className="w-full justify-between"
-                  onClick={() => handleAssignMealToDay(selectedDayForMeal, meal)}
-                  data-testid={`button-assign-meal-${meal.id}`}
-                >
-                  <span>{meal.name}</span>
-                  <span className="text-xs text-muted-foreground">{meal.totalCalories} kcal</span>
-                </Button>
-              ))}
-            </div>
-            <Button
-              variant="ghost"
-              className="w-full"
-              onClick={() => setSelectedDayForMeal(null)}
-            >
-              Annulla
-            </Button>
-          </div>
-        )}
-
         {/* Meals List */}
         <div className="space-y-3">
           {filteredMeals.length > 0 ? (
@@ -269,6 +248,46 @@ export default function Meals() {
         onSave={handleSaveMeal}
         foods={foods}
       />
+
+      {/* Select Day Meal Dialog */}
+      <Dialog open={selectedDayForMeal !== null} onOpenChange={(open) => !open && setSelectedDayForMeal(null)}>
+        <DialogContent className="max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              Seleziona un pasto per {selectedDayForMeal !== null ? ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'][selectedDayForMeal] : ''}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-2 max-h-96 overflow-y-auto">
+            {meals.map(meal => (
+              <Button
+                key={meal.id}
+                variant="outline"
+                className="w-full justify-between"
+                onClick={() => {
+                  if (selectedDayForMeal !== null) {
+                    handleAssignMealToDay(selectedDayForMeal, meal);
+                  }
+                }}
+                data-testid={`button-assign-meal-${meal.id}`}
+              >
+                <span>{meal.name}</span>
+                <span className="text-xs text-muted-foreground">{meal.totalCalories} kcal</span>
+              </Button>
+            ))}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setSelectedDayForMeal(null)}
+              data-testid="button-cancel-select-meal"
+            >
+              Annulla
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!mealToDelete} onOpenChange={(open) => !open && setMealToDelete(null)}>
