@@ -3,27 +3,55 @@ import StatisticsChart from "@/components/StatisticsChart";
 import BadgeCard from "@/components/BadgeCard";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { BarChart3, Award } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { format, subDays } from "date-fns";
+import { it } from "date-fns/locale";
+import { getDailyMeal, loadDailyMeals, loadSettings } from "@/lib/storage";
 
 export default function Stats() {
   const [activeTab, setActiveTab] = useState<"charts" | "badges">("charts");
+  const [pieData, setPieData] = useState<any[]>([]);
+  const [lineData, setLineData] = useState<any[]>([]);
 
-  // Mock data - TODO: remove mock functionality
-  const pieData = [
-    { name: 'Proteine', value: 30 },
-    { name: 'Carboidrati', value: 50 },
-    { name: 'Grassi', value: 20 },
-  ];
+  // Load and calculate real data
+  useEffect(() => {
+    const today = new Date();
+    
+    // Calculate last 7 days data for line chart
+    const dailyCalories: any[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = subDays(today, i);
+      const dateKey = format(date, 'yyyy-MM-dd');
+      const dayName = format(date, 'EEE', { locale: it }).slice(0, 3).toUpperCase();
+      const mealItems = getDailyMeal(dateKey);
+      const calories = mealItems.reduce((sum, item) => sum + item.calories, 0);
+      dailyCalories.push({ name: dayName, calories });
+    }
+    setLineData(dailyCalories);
 
-  const lineData = [
-    { name: 'Lun', calories: 1800 },
-    { name: 'Mar', calories: 2100 },
-    { name: 'Mer', calories: 1950 },
-    { name: 'Gio', calories: 2200 },
-    { name: 'Ven', calories: 1880 },
-    { name: 'Sab', calories: 2050 },
-    { name: 'Dom', calories: 1900 },
-  ];
+    // Calculate today's macronutrient distribution for pie chart
+    const todayKey = format(today, 'yyyy-MM-dd');
+    const todayMeals = getDailyMeal(todayKey);
+    const totalProtein = todayMeals.reduce((sum, item) => sum + item.protein, 0);
+    const totalCarbs = todayMeals.reduce((sum, item) => sum + item.carbs, 0);
+    const totalFat = todayMeals.reduce((sum, item) => sum + item.fat, 0);
+    
+    // Calculate percentages
+    const total = totalProtein + totalCarbs + totalFat;
+    if (total > 0) {
+      setPieData([
+        { name: 'Proteine', value: Math.round((totalProtein / total) * 100) },
+        { name: 'Carboidrati', value: Math.round((totalCarbs / total) * 100) },
+        { name: 'Grassi', value: Math.round((totalFat / total) * 100) },
+      ]);
+    } else {
+      setPieData([
+        { name: 'Proteine', value: 0 },
+        { name: 'Carboidrati', value: 0 },
+        { name: 'Grassi', value: 0 },
+      ]);
+    }
+  }, []);
 
   const mockBadges = [
     {
