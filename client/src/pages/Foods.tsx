@@ -79,7 +79,15 @@ export default function Foods() {
   }, [searchQuery, activeTab, selectedCategory]);
 
   const handleSaveFood = (food: FoodItem) => {
-    setFoods(prev => prev.map(f => f.id === food.id ? food : f));
+    // Check if it's a new food or an edit
+    const existingFood = foods.find(f => f.id === food.id);
+    if (existingFood) {
+      // Edit existing food
+      setFoods(prev => prev.map(f => f.id === food.id ? food : f));
+    } else {
+      // Add new food
+      setFoods(prev => [...prev, food]);
+    }
   };
 
   const handleDeleteFood = (id: string) => {
@@ -106,10 +114,6 @@ export default function Foods() {
     };
     setEditingFood(newFood);
     setDialogOpen(true);
-  };
-
-  const handleConfirmNewFood = (food: FoodItem) => {
-    setFoods(prev => [...prev, food]);
   };
 
   return (
