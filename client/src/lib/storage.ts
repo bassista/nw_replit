@@ -551,7 +551,7 @@ export function clearAllData() {
   const keysToRemove: string[] = [];
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
-    if (key?.startsWith('nutritrack_water_')) {
+    if (key?.startsWith('nutritrack_water_') || key?.startsWith('nutritrack_health_') || key?.startsWith('nutritrack_meal_auto_copy_prompt_')) {
       keysToRemove.push(key);
     }
   }

@@ -79,10 +79,18 @@ export default function Settings() {
         try {
           const data = JSON.parse(event.target?.result as string);
           importAllData(data);
-          window.location.reload();
+          toast({
+            title: language === 'it' ? 'Importazione completata' : 'Import successful',
+            description: language === 'it' ? 'I tuoi dati sono stati ripristinati. Pagina ricaricata.' : 'Your data has been restored. Page reloaded.',
+          });
+          setTimeout(() => window.location.reload(), 1500);
         } catch (error) {
           console.error('Error importing data:', error);
-          alert(language === 'it' ? 'Errore nell\'importazione dei dati' : 'Error importing data');
+          toast({
+            title: language === 'it' ? 'Errore nell\'importazione' : 'Import error',
+            description: language === 'it' ? 'Si è verificato un errore durante l\'importazione dei dati.' : 'An error occurred during data import.',
+            variant: "destructive",
+          });
         }
       };
       reader.readAsText(file);
