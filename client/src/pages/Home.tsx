@@ -26,7 +26,7 @@ import { useState, useEffect } from "react";
 import { format, addDays, subDays } from "date-fns";
 import { it } from "date-fns/locale";
 import { useLanguage } from "@/lib/languageContext";
-import { getDailyMeal, saveDailyMeal, loadSettings, getWaterIntake, saveWaterIntake, loadFoods, calculateDailyScore, loadMeals, loadWeeklyAssignments, type DailyMealItem, type Meal } from "@/lib/storage";
+import { getDailyMeal, saveDailyMeal, loadSettings, getWaterIntake, saveWaterIntake, loadFoods, calculateDailyScore, loadMeals, loadWeeklyAssignments, isAutoMealCopyPrompted, markAutoMealCopyPrompted, type DailyMealItem, type Meal } from "@/lib/storage";
 import type { FoodItem } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
@@ -70,11 +70,8 @@ export default function Home() {
 
     // Check if we should auto-prompt to copy meal
     if (items.length === 0) {
-      // Check if already prompted today
-      const promptedKey = `nutritrack_meal_auto_copy_prompt_${dateKey}`;
-      const alreadyPrompted = localStorage.getItem(promptedKey);
-
-      if (!alreadyPrompted) {
+      // Check if already prompted today using storage interface
+      if (!isAutoMealCopyPrompted(dateKey)) {
         // Check if there's a meal assigned for today
         const dayOfWeek = currentDate.getDay();
         const assignments = loadWeeklyAssignments();
@@ -85,8 +82,8 @@ export default function Home() {
           if (mealForDay && mealForDay.ingredients.length > 0) {
             setAutoMealToCopy(mealForDay);
             setShowAutoMealCopyDialog(true);
-            // Mark as prompted for this day
-            localStorage.setItem(promptedKey, 'true');
+            // Mark as prompted for this day using storage interface
+            markAutoMealCopyPrompted(dateKey);
           }
         }
       }

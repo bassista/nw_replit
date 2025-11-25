@@ -582,6 +582,46 @@ export async function importData(json: string | ProgressEvent<FileReader>) {
   if (data.waterIntake) useAppStore.setState({ waterIntake: data.waterIntake });
 }
 
+// ==================== PROMPTED STATE (Session Tracking) ====================
+// These functions manage temporary state for prompts shown to the user
+// Using localStorage internally but accessed through this indirection layer
+// In future, this can be replaced with a different adapter
+
+const PROMPTED_AUTO_MEAL_COPY_PREFIX = 'nutritrack_meal_auto_copy_prompt_';
+
+/**
+ * Check if user has already been prompted for auto-meal copy on a specific date
+ * @param dateKey - Format: yyyy-MM-dd
+ * @returns true if already prompted, false otherwise
+ */
+export function isAutoMealCopyPrompted(dateKey: string): boolean {
+  const promptedKey = `${PROMPTED_AUTO_MEAL_COPY_PREFIX}${dateKey}`;
+  return localStorage.getItem(promptedKey) === 'true';
+}
+
+/**
+ * Mark that user has been prompted for auto-meal copy on a specific date
+ * @param dateKey - Format: yyyy-MM-dd
+ */
+export function markAutoMealCopyPrompted(dateKey: string): void {
+  const promptedKey = `${PROMPTED_AUTO_MEAL_COPY_PREFIX}${dateKey}`;
+  localStorage.setItem(promptedKey, 'true');
+}
+
+/**
+ * Clear all prompted state (useful for testing or resetting)
+ */
+export function clearPromptedState(): void {
+  const keys = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith(PROMPTED_AUTO_MEAL_COPY_PREFIX)) {
+      keys.push(key);
+    }
+  }
+  keys.forEach(key => localStorage.removeItem(key));
+}
+
 // Clear All Data
 export function clearAllData() {
   useAppStore.setState({
@@ -596,6 +636,8 @@ export function clearAllData() {
     healthData: {},
     waterIntake: {},
   });
+  // Also clear prompted state
+  clearPromptedState();
   // Force save to localStorage immediately
   useAppStore.getState().saveState();
 }
