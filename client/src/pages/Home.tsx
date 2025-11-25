@@ -47,6 +47,8 @@ export default function Home() {
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   const [showSelectMealDialog, setShowSelectMealDialog] = useState(false);
+  const [showAutoMealCopyDialog, setShowAutoMealCopyDialog] = useState(false);
+  const [autoMealToCopy, setAutoMealToCopy] = useState<Meal | null>(null);
   const [availableMeals, setAvailableMeals] = useState<Meal[]>([]);
   const { t } = useLanguage();
 
@@ -59,8 +61,33 @@ export default function Home() {
     setDailyMealItems(items);
     setWaterMl(water);
     setAvailableFoods(loadFoods());
-    setAvailableMeals(loadMeals());
-  }, [dateKey]);
+    const meals = loadMeals();
+    setAvailableMeals(meals);
+
+    // Check if we should auto-prompt to copy meal
+    if (items.length === 0) {
+      // Check if already prompted today
+      const promptedKey = `nutritrack_meal_auto_copy_prompt_${dateKey}`;
+      const alreadyPrompted = localStorage.getItem(promptedKey);
+
+      if (!alreadyPrompted) {
+        // Check if there's a meal assigned for today
+        const dayOfWeek = currentDate.getDay();
+        const assignments = loadWeeklyAssignments();
+        const assignment = assignments.find(a => a.dayOfWeek === dayOfWeek);
+
+        if (assignment) {
+          const mealForDay = meals.find(m => m.id === assignment.mealId);
+          if (mealForDay && mealForDay.ingredients.length > 0) {
+            setAutoMealToCopy(mealForDay);
+            setShowAutoMealCopyDialog(true);
+            // Mark as prompted for this day
+            localStorage.setItem(promptedKey, 'true');
+          }
+        }
+      }
+    }
+  }, [dateKey, currentDate]);
 
   // Save daily meal when items change
   useEffect(() => {
@@ -641,6 +668,32 @@ export default function Home() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Auto-copy Meal Dialog */}
+      <AlertDialog open={showAutoMealCopyDialog} onOpenChange={setShowAutoMealCopyDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Copiare Pasto nel Diario?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Hai il pasto "{autoMealToCopy?.name}" associato a oggi. Vuoi aggiungere i suoi {autoMealToCopy?.ingredientCount} {autoMealToCopy?.ingredientCount === 1 ? 'ingrediente' : 'ingredienti'} al diario?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogCancel data-testid="button-cancel-auto-copy">
+            No, grazie
+          </AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => {
+              if (autoMealToCopy) {
+                copyMealToDiary(autoMealToCopy);
+              }
+              setShowAutoMealCopyDialog(false);
+            }}
+            data-testid="button-confirm-auto-copy"
+          >
+            Sì, copia
+          </AlertDialogAction>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
