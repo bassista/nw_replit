@@ -2,16 +2,7 @@ import TopBar from "@/components/TopBar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Progress } from "@/components/ui/progress";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Calendar, ChevronLeft, ChevronRight, Plus, Droplet } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
 import { useState, useEffect } from "react";
 import { format, addDays, subDays } from "date-fns";
 import { it } from "date-fns/locale";
@@ -24,12 +15,11 @@ export default function Health() {
   const [healthData, setHealthData] = useState<HealthData>({ date: '' });
   const [waterMl, setWaterMl] = useState(0);
   const [settings, setSettings] = useState(loadSettings());
-  const [showDialog, setShowDialog] = useState(false);
-  const [inputWeight, setInputWeight] = useState('');
-  const [inputGlucose, setInputGlucose] = useState('');
-  const [inputInsulin, setInputInsulin] = useState('');
-  const [inputWater, setInputWater] = useState('');
-  const [editingField, setEditingField] = useState<'weight' | 'glucose' | 'insulin' | 'water' | null>(null);
+  
+  // Inline input states for glucose and insulin
+  const [glucoseInput, setGlucoseInput] = useState('');
+  const [insulinInput, setInsulinInput] = useState('');
+  const [weightInput, setWeightInput] = useState('');
 
   const dateKey = format(currentDate, 'yyyy-MM-dd');
 
@@ -38,59 +28,103 @@ export default function Health() {
     setHealthData(data);
     const water = getWaterIntake(dateKey);
     setWaterMl(water);
+    setGlucoseInput('');
+    setInsulinInput('');
+    setWeightInput('');
   }, [dateKey]);
 
-  const handleSaveHealth = () => {
-    const updates: Partial<HealthData> = {};
-    
-    if (editingField === 'weight' && inputWeight) {
-      updates.weight = parseFloat(inputWeight);
-    }
-    if (editingField === 'glucose' && inputGlucose) {
-      updates.glucose = parseFloat(inputGlucose);
-    }
-    if (editingField === 'insulin' && inputInsulin) {
-      updates.insulin = parseFloat(inputInsulin);
-    }
-    if (editingField === 'water' && inputWater) {
-      const waterValue = parseFloat(inputWater);
-      saveWaterIntake(dateKey, waterValue);
-      setWaterMl(waterValue);
+  // Handle Peso save
+  const handleSaveWeight = () => {
+    if (!weightInput) {
       toast({
-        title: "Acqua registrata",
-        description: `${waterValue} ml di acqua registrati per ${format(currentDate, 'dd MMMM', { locale: it })}.`,
+        title: "Errore",
+        description: "Inserisci il peso",
+        variant: "destructive",
       });
-      setShowDialog(false);
-      setInputWater('');
-      setEditingField(null);
       return;
     }
-
-    if (Object.keys(updates).length > 0) {
-      saveHealthData(dateKey, updates);
-      const updated = getHealthData(dateKey);
-      setHealthData(updated);
-      
-      toast({
-        title: "Dati salvati",
-        description: "I dati di salute sono stati registrati.",
-      });
-    }
-
-    setShowDialog(false);
-    setInputWeight('');
-    setInputGlucose('');
-    setInputInsulin('');
-    setEditingField(null);
+    const weight = parseFloat(weightInput);
+    saveHealthData(dateKey, { weight });
+    const updated = getHealthData(dateKey);
+    setHealthData(updated);
+    setWeightInput('');
+    toast({
+      title: "Peso registrato",
+      description: `${weight} kg registrato.`,
+    });
   };
 
-  const openDialog = (field: 'weight' | 'glucose' | 'insulin' | 'water') => {
-    setEditingField(field);
-    if (field === 'weight') setInputWeight(healthData.weight?.toString() || '');
-    if (field === 'glucose') setInputGlucose(healthData.glucose?.toString() || '');
-    if (field === 'insulin') setInputInsulin(healthData.insulin?.toString() || '');
-    if (field === 'water') setInputWater(waterMl?.toString() || '');
-    setShowDialog(true);
+  // Handle Glucosio add
+  const handleAddGlucose = () => {
+    if (!glucoseInput) {
+      toast({
+        title: "Errore",
+        description: "Inserisci il valore di glucosio",
+        variant: "destructive",
+      });
+      return;
+    }
+    const glucose = parseFloat(glucoseInput);
+    saveHealthData(dateKey, { glucose });
+    const updated = getHealthData(dateKey);
+    setHealthData(updated);
+    setGlucoseInput('');
+    toast({
+      title: "Glucosio registrato",
+      description: `${glucose} mg/dL registrato.`,
+    });
+  };
+
+  // Handle Insulina add
+  const handleAddInsulin = () => {
+    if (!insulinInput) {
+      toast({
+        title: "Errore",
+        description: "Inserisci il valore di insulina",
+        variant: "destructive",
+      });
+      return;
+    }
+    const insulin = parseFloat(insulinInput);
+    saveHealthData(dateKey, { insulin });
+    const updated = getHealthData(dateKey);
+    setHealthData(updated);
+    setInsulinInput('');
+    toast({
+      title: "Insulina registrata",
+      description: `${insulin} U registrata.`,
+    });
+  };
+
+  // Reset functions
+  const resetWeight = () => {
+    saveHealthData(dateKey, { weight: undefined });
+    const updated = getHealthData(dateKey);
+    setHealthData(updated);
+    toast({
+      title: "Peso azzerato",
+      description: "Il peso è stato resettato.",
+    });
+  };
+
+  const resetGlucose = () => {
+    saveHealthData(dateKey, { glucose: undefined });
+    const updated = getHealthData(dateKey);
+    setHealthData(updated);
+    toast({
+      title: "Glucosio azzerato",
+      description: "Il glucosio è stato resettato.",
+    });
+  };
+
+  const resetInsulin = () => {
+    saveHealthData(dateKey, { insulin: undefined });
+    const updated = getHealthData(dateKey);
+    setHealthData(updated);
+    toast({
+      title: "Insulina azzerata",
+      description: "L'insulina è stata resettata.",
+    });
   };
 
   return (
@@ -131,204 +165,120 @@ export default function Health() {
         </div>
 
         {/* Health Metrics */}
-        <div className="space-y-3">
-          {/* Water Intake */}
-          <Card className="p-4">
+        <div className="space-y-4">
+          {/* Peso Corporeo */}
+          <Card className="p-5">
+            <div className="space-y-3">
+              <h3 className="font-semibold text-lg text-foreground">Peso Corporeo</h3>
+              <div className="flex gap-2">
+                <Input
+                  type="number"
+                  step="0.1"
+                  value={weightInput}
+                  onChange={(e) => setWeightInput(e.target.value)}
+                  placeholder="Inserisci peso in kg"
+                  data-testid="input-weight"
+                  className="flex-1"
+                />
+                <Button
+                  className="bg-green-500 hover:bg-green-600 text-white"
+                  onClick={handleSaveWeight}
+                  data-testid="button-save-weight"
+                >
+                  Salva
+                </Button>
+              </div>
+              {healthData.weight && (
+                <div className="text-sm text-muted-foreground">
+                  Ultimo valore: {healthData.weight} kg
+                </div>
+              )}
+            </div>
+          </Card>
+
+          {/* Glicemia */}
+          <Card className="p-5">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Droplet className="w-5 h-5 text-primary" />
-                  <p className="text-sm text-muted-foreground">Idratazione</p>
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  {waterMl} / {settings.waterTargetMl} ml
-                </div>
-              </div>
-              <Progress value={Math.min((waterMl / settings.waterTargetMl) * 100, 100)} className="h-2" />
-              <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-2xl font-bold text-foreground">{waterMl}</p>
-                  <p className="text-xs text-muted-foreground">ml consumati</p>
+                  <h3 className="font-semibold text-lg text-foreground">Glicemia</h3>
+                  <p className="text-2xl font-bold text-foreground">
+                    {healthData.glucose ?? '0.0'} <span className="text-sm text-muted-foreground">mg/dL</span>
+                  </p>
                 </div>
                 <Button
                   size="icon"
                   variant="outline"
-                  onClick={() => openDialog('water')}
-                  data-testid="button-log-water"
+                  onClick={resetGlucose}
+                  className="text-blue-500 hover:text-blue-600 border-blue-300 hover:border-blue-400"
+                  data-testid="button-reset-glucose"
                 >
-                  <Plus className="w-4 h-4" />
+                  <RotateCcw className="w-4 h-4" />
                 </Button>
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  type="number"
+                  step="1"
+                  value={glucoseInput}
+                  onChange={(e) => setGlucoseInput(e.target.value)}
+                  placeholder="Inserisci valore"
+                  data-testid="input-glucose"
+                  className="flex-1"
+                />
                 <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    const newWater = waterMl + settings.glassCapacityMl;
-                    saveWaterIntake(dateKey, newWater);
-                    setWaterMl(newWater);
-                    toast({
-                      title: "Bicchiere aggiunto",
-                      description: `${settings.glassCapacityMl} ml di acqua aggiunti.`,
-                    });
-                  }}
-                  data-testid="button-add-glass-water"
+                  className="bg-green-500 hover:bg-green-600 text-white"
+                  onClick={handleAddGlucose}
+                  data-testid="button-add-glucose"
                 >
-                  <Plus className="w-3 h-3 mr-1" />
-                  Bicchiere
+                  + Aggiungi
                 </Button>
               </div>
             </div>
           </Card>
 
-          {/* Weight */}
-          <Card className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Peso</p>
-                <p className="text-2xl font-bold text-foreground">
-                  {healthData.weight ? `${healthData.weight} kg` : '—'}
-                </p>
+          {/* Insulina Assunta */}
+          <Card className="p-5">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold text-lg text-foreground">Insulina Assunta</h3>
+                  <p className="text-2xl font-bold text-foreground">
+                    {healthData.insulin ?? '0.0'} <span className="text-sm text-muted-foreground">unità</span>
+                  </p>
+                </div>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  onClick={resetInsulin}
+                  className="text-blue-500 hover:text-blue-600 border-blue-300 hover:border-blue-400"
+                  data-testid="button-reset-insulin"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                </Button>
               </div>
-              <Button
-                size="icon"
-                variant="outline"
-                onClick={() => openDialog('weight')}
-                data-testid="button-log-weight"
-              >
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-          </Card>
-
-          {/* Glucose */}
-          <Card className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Glucosio</p>
-                <p className="text-2xl font-bold text-foreground">
-                  {healthData.glucose ? `${healthData.glucose} mg/dL` : '—'}
-                </p>
+              <div className="flex gap-2">
+                <Input
+                  type="number"
+                  step="0.1"
+                  value={insulinInput}
+                  onChange={(e) => setInsulinInput(e.target.value)}
+                  placeholder="Inserisci unità"
+                  data-testid="input-insulin"
+                  className="flex-1"
+                />
+                <Button
+                  className="bg-green-500 hover:bg-green-600 text-white"
+                  onClick={handleAddInsulin}
+                  data-testid="button-add-insulin"
+                >
+                  + Aggiungi
+                </Button>
               </div>
-              <Button
-                size="icon"
-                variant="outline"
-                onClick={() => openDialog('glucose')}
-                data-testid="button-log-glucose"
-              >
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-          </Card>
-
-          {/* Insulin */}
-          <Card className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Insulina</p>
-                <p className="text-2xl font-bold text-foreground">
-                  {healthData.insulin ? `${healthData.insulin} U` : '—'}
-                </p>
-              </div>
-              <Button
-                size="icon"
-                variant="outline"
-                onClick={() => openDialog('insulin')}
-                data-testid="button-log-insulin"
-              >
-                <Plus className="w-4 h-4" />
-              </Button>
             </div>
           </Card>
         </div>
       </div>
-
-      {/* Input Dialog */}
-      <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="w-96">
-          <DialogHeader>
-            <DialogTitle>
-              {editingField === 'weight' && 'Registra Peso'}
-              {editingField === 'glucose' && 'Registra Glucosio'}
-              {editingField === 'insulin' && 'Registra Insulina'}
-              {editingField === 'water' && 'Registra Acqua'}
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            {editingField === 'weight' && (
-              <div className="space-y-2">
-                <Label>Peso (kg)</Label>
-                <Input
-                  type="number"
-                  step="0.1"
-                  value={inputWeight}
-                  onChange={(e) => setInputWeight(e.target.value)}
-                  placeholder="Inserisci peso..."
-                  data-testid="input-weight"
-                  autoFocus
-                />
-              </div>
-            )}
-            {editingField === 'glucose' && (
-              <div className="space-y-2">
-                <Label>Glucosio (mg/dL)</Label>
-                <Input
-                  type="number"
-                  step="1"
-                  value={inputGlucose}
-                  onChange={(e) => setInputGlucose(e.target.value)}
-                  placeholder="Inserisci glucosio..."
-                  data-testid="input-glucose"
-                  autoFocus
-                />
-              </div>
-            )}
-            {editingField === 'insulin' && (
-              <div className="space-y-2">
-                <Label>Insulina (U)</Label>
-                <Input
-                  type="number"
-                  step="0.1"
-                  value={inputInsulin}
-                  onChange={(e) => setInputInsulin(e.target.value)}
-                  placeholder="Inserisci insulina..."
-                  data-testid="input-insulin"
-                  autoFocus
-                />
-              </div>
-            )}
-            {editingField === 'water' && (
-              <div className="space-y-2">
-                <Label>Acqua (ml)</Label>
-                <Input
-                  type="number"
-                  step="50"
-                  value={inputWater}
-                  onChange={(e) => setInputWater(e.target.value)}
-                  placeholder="Inserisci ml di acqua..."
-                  data-testid="input-water"
-                  autoFocus
-                />
-              </div>
-            )}
-          </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowDialog(false)}
-              data-testid="button-cancel-health"
-            >
-              Annulla
-            </Button>
-            <Button
-              onClick={handleSaveHealth}
-              data-testid="button-save-health"
-            >
-              Salva
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
