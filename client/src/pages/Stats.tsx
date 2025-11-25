@@ -237,28 +237,38 @@ export default function Stats() {
     setGlucoseInsulinData(glucoseInsulinTrend);
 
     // ===== BADGES =====
+    const allBadges = [
+      // Easy Tier
+      { id: '5', name: 'First Meal Logged', description: 'Log any food or meal in the diary for the first time.', unlocked: false },
+      { id: '6', name: 'Meal Creator', description: 'Create one custom meal.', unlocked: false },
+      { id: '7', name: 'First Favorite', description: 'Mark one food as a favorite.', unlocked: false },
+      { id: '8', name: 'Scanner Pro', description: 'Add a new food by scanning its barcode.', unlocked: false },
+      { id: '9', name: 'List Specialist', description: 'Create one custom shopping list.', unlocked: false },
+      // Medium Tier
+      { id: '10', name: '7-Day Streak', description: 'Log at least one food or meal for 7 consecutive days.', unlocked: false },
+      { id: '11', name: 'Hydration Marathoner', description: 'Meet the daily water intake goal for 7 consecutive days.', unlocked: false },
+      { id: '12', name: 'Pro Planner', description: 'Create a total of 10 custom meals.', unlocked: false },
+      { id: '13', name: 'Favorite Collector', description: 'Save 25 different foods to the favorites list.', unlocked: false },
+      { id: '14', name: '30-Day Streak', description: 'Log at least one food or meal for 30 consecutive days.', unlocked: false },
+      // Hard Tier
+      { id: '15', name: 'Hydration Monarch', description: 'Meet the daily water intake goal for 30 consecutive days.', unlocked: false },
+      { id: '16', name: 'Supreme Chef', description: 'Create a total of 50 custom meals.', unlocked: false },
+      { id: '17', name: 'Guru of Favorites', description: 'Save 100 different foods in the favorites list.', unlocked: false },
+      { id: '18', name: 'Legend of Perseverance', description: 'Log at least one food or meal for 100 consecutive days.', unlocked: false },
+    ];
+
     let loadedBadges = loadBadges();
     if (loadedBadges.length === 0) {
-      loadedBadges = [
-        // Easy Tier
-        { id: '5', name: 'First Meal Logged', description: 'Log any food or meal in the diary for the first time.', unlocked: false },
-        { id: '6', name: 'Meal Creator', description: 'Create one custom meal.', unlocked: false },
-        { id: '7', name: 'First Favorite', description: 'Mark one food as a favorite.', unlocked: false },
-        { id: '8', name: 'Scanner Pro', description: 'Add a new food by scanning its barcode.', unlocked: false },
-        { id: '9', name: 'List Specialist', description: 'Create one custom shopping list.', unlocked: false },
-        // Medium Tier
-        { id: '10', name: '7-Day Streak', description: 'Log at least one food or meal for 7 consecutive days.', unlocked: false },
-        { id: '11', name: 'Hydration Marathoner', description: 'Meet the daily water intake goal for 7 consecutive days.', unlocked: false },
-        { id: '12', name: 'Pro Planner', description: 'Create a total of 10 custom meals.', unlocked: false },
-        { id: '13', name: 'Favorite Collector', description: 'Save 25 different foods to the favorites list.', unlocked: false },
-        { id: '14', name: '30-Day Streak', description: 'Log at least one food or meal for 30 consecutive days.', unlocked: false },
-        // Hard Tier
-        { id: '15', name: 'Hydration Monarch', description: 'Meet the daily water intake goal for 30 consecutive days.', unlocked: false },
-        { id: '16', name: 'Supreme Chef', description: 'Create a total of 50 custom meals.', unlocked: false },
-        { id: '17', name: 'Guru of Favorites', description: 'Save 100 different foods in the favorites list.', unlocked: false },
-        { id: '18', name: 'Legend of Perseverance', description: 'Log at least one food or meal for 100 consecutive days.', unlocked: false },
-      ];
+      loadedBadges = allBadges;
       saveBadges(loadedBadges);
+    } else {
+      // Migrate old badges by adding missing new badges
+      const existingIds = new Set(loadedBadges.map(b => b.id));
+      const missingBadges = allBadges.filter(b => !existingIds.has(b.id));
+      if (missingBadges.length > 0) {
+        loadedBadges = [...loadedBadges, ...missingBadges];
+        saveBadges(loadedBadges);
+      }
     }
 
     const updatedBadges = loadedBadges.map(badge => {
