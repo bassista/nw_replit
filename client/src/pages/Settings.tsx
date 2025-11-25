@@ -57,15 +57,28 @@ export default function Settings() {
     saveCategories(categories);
   }, [categories]);
 
-  const handleExportData = () => {
-    const data = exportAllData();
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `nutritrack-data-${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const handleExportData = async () => {
+    try {
+      const jsonData = await exportAllData();
+      const blob = new Blob([jsonData], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `nutritrack-data-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast({
+        title: language === 'it' ? 'Esportazione completata' : 'Export successful',
+        description: language === 'it' ? 'I tuoi dati sono stati esportati correttamente.' : 'Your data has been exported successfully.',
+      });
+    } catch (error) {
+      console.error('Error exporting data:', error);
+      toast({
+        title: language === 'it' ? 'Errore nell\'esportazione' : 'Export error',
+        description: language === 'it' ? 'Si è verificato un errore durante l\'esportazione dei dati.' : 'An error occurred during data export.',
+        variant: "destructive",
+      });
+    }
   };
 
   const handleImportData = () => {
