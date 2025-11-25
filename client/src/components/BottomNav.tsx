@@ -1,4 +1,4 @@
-import { Home, UtensilsCrossed, BarChart3, Settings, Apple, ShoppingBag } from "lucide-react";
+import { Home, UtensilsCrossed, BarChart3, Settings, Apple, ShoppingBag, Heart } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useLanguage } from "@/lib/languageContext";
 
@@ -10,6 +10,7 @@ export default function BottomNav() {
     { icon: Home, label: t.nav.diary, path: "/" },
     { icon: Apple, label: t.nav.foods, path: "/foods" },
     { icon: UtensilsCrossed, label: t.nav.meals, path: "/meals" },
+    { icon: Heart, label: t.nav.health, path: "/health" },
     { icon: ShoppingBag, label: t.nav.lists, path: "/lists" },
     { icon: BarChart3, label: t.nav.stats, path: "/stats" },
   ];
