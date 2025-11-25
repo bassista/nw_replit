@@ -19,9 +19,20 @@ export function loadFoods(): FoodItem[] {
 }
 
 // Daily Meals Storage
+export interface DailyMealItem {
+  id: string;
+  foodId: string;
+  name: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  grams: number;
+}
+
 export interface DailyMeal {
   date: string;
-  items: Array<{ id: string; name: string; calories: number; grams: number }>;
+  items: DailyMealItem[];
 }
 
 export function saveDailyMeals(meals: DailyMeal[]) {

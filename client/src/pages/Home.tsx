@@ -17,17 +17,23 @@ import { useState, useEffect } from "react";
 import { format, addDays, subDays } from "date-fns";
 import { it } from "date-fns/locale";
 import { useLanguage } from "@/lib/languageContext";
-import { getDailyMeal, saveDailyMeal, loadSettings, getWaterIntake, saveWaterIntake, loadFoods } from "@/lib/storage";
+import { getDailyMeal, saveDailyMeal, loadSettings, getWaterIntake, saveWaterIntake, loadFoods, type DailyMealItem } from "@/lib/storage";
 import type { FoodItem } from "@shared/schema";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 
 export default function Home() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [waterMl, setWaterMl] = useState(0);
-  const [dailyMealItems, setDailyMealItems] = useState<Array<{ id: string; name: string; calories: number; grams: number }>>([]);
+  const [dailyMealItems, setDailyMealItems] = useState<DailyMealItem[]>([]);
   const [settings, setSettings] = useState(loadSettings());
   const [showAddFoodDialog, setShowAddFoodDialog] = useState(false);
+  const [showQuantityDialog, setShowQuantityDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [availableFoods, setAvailableFoods] = useState<FoodItem[]>([]);
+  const [selectedFoodForQuantity, setSelectedFoodForQuantity] = useState<FoodItem | null>(null);
+  const [selectedQuantity, setSelectedQuantity] = useState(100);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const { t } = useLanguage();
 
   const dateKey = format(currentDate, 'yyyy-MM-dd');
@@ -51,16 +57,48 @@ export default function Home() {
     saveWaterIntake(dateKey, waterMl);
   }, [waterMl, dateKey]);
 
-  const handleAddFood = (food: FoodItem) => {
-    const newItem = {
-      id: Date.now().toString(),
-      name: food.name,
-      calories: food.calories,
-      grams: 100,
-    };
-    setDailyMealItems(prev => [...prev, newItem]);
+  const handleSelectFood = (food: FoodItem) => {
+    setSelectedFoodForQuantity(food);
+    setSelectedQuantity(100);
+    setEditingItemId(null);
     setShowAddFoodDialog(false);
+    setShowQuantityDialog(true);
+  };
+
+  const handleConfirmQuantity = () => {
+    if (!selectedFoodForQuantity) return;
+
+    const gramsMultiplier = selectedQuantity / 100;
+    const newItem: DailyMealItem = {
+      id: editingItemId || Date.now().toString(),
+      foodId: selectedFoodForQuantity.id,
+      name: selectedFoodForQuantity.name,
+      calories: Math.round(selectedFoodForQuantity.calories * gramsMultiplier),
+      protein: Math.round(selectedFoodForQuantity.protein * gramsMultiplier),
+      carbs: Math.round(selectedFoodForQuantity.carbs * gramsMultiplier),
+      fat: Math.round(selectedFoodForQuantity.fat * gramsMultiplier),
+      grams: selectedQuantity,
+    };
+
+    if (editingItemId) {
+      setDailyMealItems(prev => prev.map(item => item.id === editingItemId ? newItem : item));
+    } else {
+      setDailyMealItems(prev => [...prev, newItem]);
+    }
+
+    setShowQuantityDialog(false);
+    setSelectedFoodForQuantity(null);
     setSearchQuery('');
+  };
+
+  const handleEditQuantity = (item: DailyMealItem) => {
+    const food = availableFoods.find(f => f.id === item.foodId);
+    if (food) {
+      setSelectedFoodForQuantity(food);
+      setSelectedQuantity(item.grams);
+      setEditingItemId(item.id);
+      setShowQuantityDialog(true);
+    }
   };
 
   const filteredFoods = availableFoods.filter(food =>
@@ -70,9 +108,9 @@ export default function Home() {
   // Calculate nutrients from daily meal
   const calculateNutrients = () => {
     const currentCalories = dailyMealItems.reduce((sum, item) => sum + item.calories, 0);
-    const currentProtein = Math.round(currentCalories * 0.35 / 4); // Rough estimation
-    const currentCarbs = Math.round(currentCalories * 0.45 / 4);
-    const currentFat = Math.round(currentCalories * 0.20 / 9);
+    const currentProtein = dailyMealItems.reduce((sum, item) => sum + item.protein, 0);
+    const currentCarbs = dailyMealItems.reduce((sum, item) => sum + item.carbs, 0);
+    const currentFat = dailyMealItems.reduce((sum, item) => sum + item.fat, 0);
 
     return [
       { name: 'Calorie', current: currentCalories, target: settings.calorieGoal, unit: 'kcal', color: 'chart-1' },
@@ -153,19 +191,31 @@ export default function Home() {
               dailyMealItems.map((item) => (
                 <div 
                   key={item.id} 
-                  className="p-4 flex items-center justify-between hover-elevate"
+                  className="p-4 flex items-center justify-between hover-elevate cursor-pointer"
+                  onClick={() => handleEditQuantity(item)}
                   data-testid={`daily-item-${item.id}`}
                 >
                   <div className="flex-1">
                     <p className="font-medium text-foreground">{item.name}</p>
-                    <p className="text-sm text-muted-foreground">{item.grams}g</p>
+                    <div className="flex gap-2 mt-1">
+                      <p className="text-sm text-muted-foreground">{item.grams}g</p>
+                      <p className="text-sm text-muted-foreground">•</p>
+                      <p className="text-sm text-muted-foreground">{item.protein}g proteine</p>
+                      <p className="text-sm text-muted-foreground">•</p>
+                      <p className="text-sm text-muted-foreground">{item.carbs}g carb</p>
+                      <p className="text-sm text-muted-foreground">•</p>
+                      <p className="text-sm text-muted-foreground">{item.fat}g grassi</p>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 flex-shrink-0">
                     <Badge variant="outline">{item.calories} kcal</Badge>
                     <Button
                       size="icon"
                       variant="ghost"
-                      onClick={() => setDailyMealItems(prev => prev.filter(i => i.id !== item.id))}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDailyMealItems(prev => prev.filter(i => i.id !== item.id));
+                      }}
                       data-testid={`button-remove-${item.id}`}
                     >
                       <Trash2 className="w-4 h-4" />
@@ -218,7 +268,7 @@ export default function Home() {
                 filteredFoods.map(food => (
                   <button
                     key={food.id}
-                    onClick={() => handleAddFood(food)}
+                    onClick={() => handleSelectFood(food)}
                     className="w-full text-left p-3 rounded-md border border-card-border hover-elevate"
                     data-testid={`food-option-${food.id}`}
                   >
@@ -226,7 +276,7 @@ export default function Home() {
                       <div>
                         <p className="font-medium text-foreground">{food.name}</p>
                         <p className="text-sm text-muted-foreground">
-                          {food.category} • {food.calories} kcal
+                          {food.category} • {food.calories} kcal (per 100g)
                         </p>
                       </div>
                       <Plus className="w-4 h-4 text-primary" />
@@ -240,6 +290,96 @@ export default function Home() {
               )}
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Quantity Dialog */}
+      <Dialog open={showQuantityDialog} onOpenChange={setShowQuantityDialog}>
+        <DialogContent className="w-96">
+          <DialogHeader>
+            <DialogTitle>
+              {editingItemId ? 'Modifica Quantità' : 'Seleziona Quantità'}
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedFoodForQuantity && (
+            <div className="space-y-6">
+              <div>
+                <p className="font-semibold text-foreground mb-2">{selectedFoodForQuantity.name}</p>
+                <p className="text-sm text-muted-foreground">{selectedFoodForQuantity.category}</p>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-base font-semibold mb-3 block">
+                    Quantità: {selectedQuantity}g
+                  </Label>
+                  <Slider
+                    value={[selectedQuantity]}
+                    onValueChange={(value) => setSelectedQuantity(value[0])}
+                    min={10}
+                    max={500}
+                    step={5}
+                    data-testid="slider-quantity"
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground mt-2">
+                    <span>10g</span>
+                    <span>500g</span>
+                  </div>
+                </div>
+
+                {/* Nutritional Preview */}
+                <Card className="p-4 bg-muted/50">
+                  <p className="text-sm font-semibold text-foreground mb-3">Valori nutrizionali (per {selectedQuantity}g):</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Calorie</p>
+                      <p className="text-lg font-semibold text-foreground">
+                        {Math.round(selectedFoodForQuantity.calories * (selectedQuantity / 100))}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Proteine</p>
+                      <p className="text-lg font-semibold text-foreground">
+                        {Math.round(selectedFoodForQuantity.protein * (selectedQuantity / 100))}g
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Carbs</p>
+                      <p className="text-lg font-semibold text-foreground">
+                        {Math.round(selectedFoodForQuantity.carbs * (selectedQuantity / 100))}g
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Grassi</p>
+                      <p className="text-lg font-semibold text-foreground">
+                        {Math.round(selectedFoodForQuantity.fat * (selectedQuantity / 100))}g
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setShowQuantityDialog(false)}
+                  data-testid="button-cancel-quantity"
+                >
+                  Annulla
+                </Button>
+                <Button
+                  variant="default"
+                  className="flex-1"
+                  onClick={handleConfirmQuantity}
+                  data-testid="button-confirm-quantity"
+                >
+                  Conferma
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
