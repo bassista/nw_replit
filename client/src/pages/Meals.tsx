@@ -24,9 +24,9 @@ import {
 import { Plus, Heart, ShoppingCart, Trash2, Search } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
-import { loadFoods, loadMeals, saveMeals, loadWeeklyAssignments, assignMealToDay, removeMealFromDay, calculateMealNutrition, saveShoppingLists, loadShoppingLists } from "@/lib/storage";
+import { loadFoods, loadMeals, saveMeals, loadWeeklyAssignments, assignMealToDay, removeMealFromDay, calculateMealNutrition, saveShoppingLists, loadShoppingLists, saveDailyMeal, getDailyMeal } from "@/lib/storage";
 import { useToast } from "@/hooks/use-toast";
-import type { Meal } from "@/lib/storage";
+import type { Meal, DailyMealItem } from "@/lib/storage";
 import type { FoodItem } from "@shared/schema";
 
 export default function Meals() {
@@ -147,6 +147,47 @@ export default function Meals() {
     toast({
       title: "Lista spesa creata",
       description: `Lista spesa per "${meal.name}" creata con ${mealItems.length} ${mealItems.length === 1 ? 'elemento' : 'elementi'}.`,
+    });
+  };
+
+  const handleAddMealToDiary = (mealId: string) => {
+    const meal = meals.find(m => m.id === mealId);
+    if (!meal || meal.ingredients.length === 0) {
+      toast({
+        title: "Pasto vuoto",
+        description: "Il pasto non ha ingredienti.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Ottieni il diario di oggi
+    const today = new Date().toISOString().split('T')[0];
+    const dailyItems = getDailyMeal(today);
+
+    // Aggiungi ogni ingrediente del pasto al diario
+    meal.ingredients.forEach(ing => {
+      const food = foods.find(f => f.id === ing.foodId);
+      if (food) {
+        const newItem: DailyMealItem = {
+          id: Date.now().toString() + Math.random(),
+          foodId: ing.foodId,
+          name: ing.name || food.name,
+          calories: Math.round(food.calories * ing.grams / 100),
+          protein: Math.round(food.protein * ing.grams / 100 * 10) / 10,
+          carbs: Math.round(food.carbs * ing.grams / 100 * 10) / 10,
+          fat: Math.round(food.fat * ing.grams / 100 * 10) / 10,
+          grams: ing.grams,
+        };
+        dailyItems.push(newItem);
+      }
+    });
+
+    saveDailyMeal(today, dailyItems);
+
+    toast({
+      title: "Pasto aggiunto al diario",
+      description: `"${meal.name}" con ${meal.ingredients.length} ${meal.ingredients.length === 1 ? 'ingrediente' : 'ingredienti'} aggiunto al diario di oggi.`,
     });
   };
 
@@ -352,6 +393,7 @@ export default function Meals() {
                     setShowDaySelector(true);
                   }
                 }}
+                onAddMealToDiary={handleAddMealToDiary}
                 onEdit={(id) => {
                   const mealToEdit = meals.find(m => m.id === id);
                   if (mealToEdit) {

@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Heart, ShoppingCart, Calendar, Edit2, Trash2, Beef, Wheat, Droplets } from "lucide-react";
+import { Heart, ShoppingCart, Calendar, Edit2, Trash2, Beef, Wheat, Droplets, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface MealCardProps {
@@ -17,6 +17,7 @@ interface MealCardProps {
   onToggleFavorite?: (id: string) => void;
   onAddToShoppingList?: (id: string) => void;
   onAddToCalendar?: (id: string) => void;
+  onAddMealToDiary?: (id: string) => void;
   onEdit?: (id: string) => void;
   onDelete?: (id: string) => void;
   onClick?: (id: string) => void;
@@ -29,6 +30,7 @@ export default function MealCard({
   onToggleFavorite, 
   onAddToShoppingList,
   onAddToCalendar,
+  onAddMealToDiary,
   onEdit,
   onDelete,
   onClick,
@@ -87,12 +89,12 @@ export default function MealCard({
           </Badge>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           {onAddToShoppingList && (
             <Button
               size="sm"
               variant="outline"
-              className="flex-1"
+              className="flex-1 min-w-max"
               onClick={(e) => {
                 e.stopPropagation();
                 onAddToShoppingList(meal.id);
@@ -107,7 +109,7 @@ export default function MealCard({
             <Button
               size="sm"
               variant="outline"
-              className="flex-1"
+              className="flex-1 min-w-max"
               onClick={(e) => {
                 e.stopPropagation();
                 onAddToCalendar(meal.id);
@@ -116,6 +118,21 @@ export default function MealCard({
             >
               <Calendar className="w-4 h-4 mr-2" />
               Calendario
+            </Button>
+          )}
+          {onAddMealToDiary && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="flex-1 min-w-max"
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddMealToDiary(meal.id);
+              }}
+              data-testid={`button-add-meal-to-diary-${meal.id}`}
+            >
+              <BookOpen className="w-4 h-4 mr-2" />
+              Diario
             </Button>
           )}
           {onEdit && (
