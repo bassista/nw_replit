@@ -11,11 +11,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Upload, Heart, Plus } from "lucide-react";
+import { Search, Upload, Heart, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useEffect } from "react";
 import type { FoodItem } from "@shared/schema";
 import { useLanguage } from "@/lib/languageContext";
-import { loadFoods, saveFoods, loadCategories, saveCategories } from "@/lib/storage";
+import { loadFoods, saveFoods, loadCategories, saveCategories, loadSettings } from "@/lib/storage";
 
 export default function Foods() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -25,11 +25,16 @@ export default function Foods() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [foods, setFoods] = useState<FoodItem[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(8);
   const { t } = useLanguage();
 
   // Load data on mount
   useEffect(() => {
     const loadedFoods = loadFoods();
+    const settings = loadSettings();
+    setItemsPerPage(settings.itemsPerPage);
+    
     if (loadedFoods.length === 0) {
       // Initialize with default foods if empty
       const defaultFoods: FoodItem[] = [
@@ -61,6 +66,17 @@ export default function Foods() {
     const matchesCategory = selectedCategory === "all" || food.category === selectedCategory;
     return matchesSearch && matchesTab && matchesCategory;
   });
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredFoods.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedFoods = filteredFoods.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, activeTab, selectedCategory]);
 
   const handleSaveFood = (food: FoodItem) => {
     setFoods(prev => prev.map(f => f.id === food.id ? food : f));
@@ -167,8 +183,8 @@ export default function Foods() {
 
         {/* Food List */}
         <div className="space-y-3">
-          {filteredFoods.length > 0 ? (
-            filteredFoods.map(food => (
+          {paginatedFoods.length > 0 ? (
+            paginatedFoods.map(food => (
               <FoodCard 
                 key={food.id}
                 food={food}
@@ -186,10 +202,36 @@ export default function Foods() {
           )}
         </div>
 
-        {/* Pagination Info */}
-        <div className="text-center text-sm text-muted-foreground">
-          {t.foods.showing} {filteredFoods.length} {t.foods.of} {foods.length} {t.foods.items}
-        </div>
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between gap-4">
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              data-testid="button-prev-page"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            
+            <div className="text-sm text-muted-foreground text-center">
+              {t.foods.showing} {startIndex + 1}-{Math.min(endIndex, filteredFoods.length)} {t.foods.of} {filteredFoods.length} {t.foods.items}
+              <br />
+              Pagina {currentPage} di {totalPages} (max {itemsPerPage}/pagina)
+            </div>
+
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+              data-testid="button-next-page"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+        )}
       </div>
 
       <EditFoodDialog 
