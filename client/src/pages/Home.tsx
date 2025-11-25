@@ -21,7 +21,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
-import { Calendar, ChevronLeft, ChevronRight, Plus, Trash2, Search, Edit } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, Plus, Trash2, Search, Edit, Beef, Wheat, Droplets, Flame } from "lucide-react";
 import { useState, useEffect } from "react";
 import { format, addDays, subDays } from "date-fns";
 import { it } from "date-fns/locale";
@@ -300,14 +300,24 @@ export default function Home() {
                 >
                   <div className="flex-1">
                     <p className="font-medium text-foreground">{item.name}</p>
-                    <div className="flex gap-2 mt-1">
-                      <p className="text-sm text-muted-foreground">{item.grams}g</p>
-                      <p className="text-sm text-muted-foreground">•</p>
-                      <p className="text-sm text-muted-foreground">{item.protein}g proteine</p>
-                      <p className="text-sm text-muted-foreground">•</p>
-                      <p className="text-sm text-muted-foreground">{item.carbs}g carb</p>
-                      <p className="text-sm text-muted-foreground">•</p>
-                      <p className="text-sm text-muted-foreground">{item.fat}g grassi</p>
+                    <div className="flex gap-2 mt-2 flex-wrap items-center">
+                      <span className="text-sm text-muted-foreground">{item.grams}g</span>
+                      <div className="flex items-center gap-1">
+                        <Flame className="w-3 h-3 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">{item.calories}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Beef className="w-3 h-3 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">{item.protein}g</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Wheat className="w-3 h-3 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">{item.carbs}g</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Droplets className="w-3 h-3 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">{item.fat}g</span>
+                      </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
