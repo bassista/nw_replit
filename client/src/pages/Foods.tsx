@@ -11,13 +11,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Heart, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Search, Heart, Plus, ChevronLeft, ChevronRight, Barcode, Loader } from "lucide-react";
 import { useState, useEffect } from "react";
 import type { FoodItem } from "@shared/schema";
 import { useLanguage } from "@/lib/languageContext";
 import { loadFoods, saveFoods, loadCategories, saveCategories, loadSettings } from "@/lib/storage";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Foods() {
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"all" | "favorites">("all");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -27,6 +36,9 @@ export default function Foods() {
   const [categories, setCategories] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(8);
+  const [barcodeScannerOpen, setBarcodeScannerOpen] = useState(false);
+  const [barcodeInput, setBarcodeInput] = useState("");
+  const [isScanning, setIsScanning] = useState(false);
   const { t } = useLanguage();
 
   // Load data on mount
@@ -116,6 +128,79 @@ export default function Foods() {
     setDialogOpen(true);
   };
 
+  const handleScanBarcode = async () => {
+    if (!barcodeInput.trim()) {
+      toast({
+        title: "Codice mancante",
+        description: "Inserisci un codice a barre valido.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsScanning(true);
+    try {
+      const response = await fetch(
+        `https://world.openfoodfacts.org/api/v0/product/${barcodeInput}.json`
+      );
+      
+      if (!response.ok || response.status === 404) {
+        toast({
+          title: "Prodotto non trovato",
+          description: `Nessun prodotto trovato con codice ${barcodeInput}.`,
+          variant: "destructive",
+        });
+        setIsScanning(false);
+        return;
+      }
+
+      const data = await response.json();
+      const product = data.product;
+
+      if (!product || !product.product_name) {
+        toast({
+          title: "Dati incompleti",
+          description: "Il prodotto trovato non ha informazioni complete.",
+          variant: "destructive",
+        });
+        setIsScanning(false);
+        return;
+      }
+
+      // Estrai nutrienti per 100g
+      const nutrients = product.nutriments || {};
+      const newFood: FoodItem = {
+        id: Date.now().toString(),
+        name: product.product_name,
+        category: product.categories || 'Altro',
+        calories: Math.round(nutrients['energy-kcal_100g'] || nutrients['energy_100g'] / 4.184 || 0),
+        protein: Math.round((nutrients['proteins_100g'] || 0) * 10) / 10,
+        carbs: Math.round((nutrients['carbohydrates_100g'] || 0) * 10) / 10,
+        fat: Math.round((nutrients['fat_100g'] || 0) * 10) / 10,
+        fiber: Math.round((nutrients['fiber_100g'] || 0) * 10) / 10,
+        isFavorite: false,
+      };
+
+      setFoods(prev => [...prev, newFood]);
+      setBarcodeInput("");
+      setBarcodeScannerOpen(false);
+      setIsScanning(false);
+
+      toast({
+        title: "Prodotto aggiunto",
+        description: `"${newFood.name}" è stato aggiunto al database.`,
+      });
+    } catch (error) {
+      console.error('Barcode scan error:', error);
+      toast({
+        title: "Errore nella scansione",
+        description: "Non è stato possibile recuperare i dati del prodotto.",
+        variant: "destructive",
+      });
+      setIsScanning(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background pb-20">
       <TopBar 
@@ -125,7 +210,27 @@ export default function Foods() {
       />
 
       <div className="max-w-2xl mx-auto px-4 py-4 space-y-4">
-        {/* Search and Upload */}
+        {/* Add and Scan Buttons */}
+        <div className="grid grid-cols-2 gap-3">
+          <Button
+            variant="default"
+            data-testid="button-add-food"
+            onClick={handleAddNewFood}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            {t.common.add}
+          </Button>
+          <Button
+            variant="outline"
+            data-testid="button-scan-barcode"
+            onClick={() => setBarcodeScannerOpen(true)}
+          >
+            <Barcode className="w-4 h-4 mr-2" />
+            Scansiona
+          </Button>
+        </div>
+
+        {/* Search and Filter */}
         <div className="space-y-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -139,28 +244,17 @@ export default function Foods() {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger data-testid="select-category-filter">
-                <SelectValue placeholder={t.foods.category} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t.foods.allCategories}</SelectItem>
-                {categories.sort().map(cat => (
-                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Button
-              variant="default"
-              data-testid="button-add-food"
-              onClick={handleAddNewFood}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              {t.common.add}
-            </Button>
-          </div>
+          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <SelectTrigger data-testid="select-category-filter">
+              <SelectValue placeholder={t.foods.category} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t.foods.allCategories}</SelectItem>
+              {categories.sort().map(cat => (
+                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Tabs */}
@@ -237,6 +331,68 @@ export default function Foods() {
         onSave={handleSaveFood}
         onDelete={handleDeleteFood}
       />
+
+      {/* Barcode Scanner Dialog */}
+      <Dialog open={barcodeScannerOpen} onOpenChange={setBarcodeScannerOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Scansiona Codice a Barre</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Codice a Barre (EAN/UPC)</label>
+              <Input
+                type="text"
+                placeholder="Inserisci o scansiona un codice a barre..."
+                value={barcodeInput}
+                onChange={(e) => setBarcodeInput(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    handleScanBarcode();
+                  }
+                }}
+                data-testid="input-barcode"
+                disabled={isScanning}
+                autoFocus
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Usa uno scanner barcode fisico oppure inserisci manualmente il codice EAN/UPC a 12-13 cifre.
+            </p>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setBarcodeScannerOpen(false);
+                setBarcodeInput("");
+              }}
+              disabled={isScanning}
+            >
+              Annulla
+            </Button>
+            <Button
+              onClick={handleScanBarcode}
+              disabled={isScanning || !barcodeInput.trim()}
+              data-testid="button-search-barcode"
+            >
+              {isScanning ? (
+                <>
+                  <Loader className="w-4 h-4 mr-2 animate-spin" />
+                  Ricerca...
+                </>
+              ) : (
+                <>
+                  <Barcode className="w-4 h-4 mr-2" />
+                  Cerca Prodotto
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
