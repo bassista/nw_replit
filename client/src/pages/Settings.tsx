@@ -119,6 +119,25 @@ export default function Settings() {
     window.location.reload();
   };
 
+  const handleLoadDefaultFoods = async () => {
+    try {
+      const response = await fetch('/all_foods.csv');
+      const csvText = await response.text();
+      await importFoodsFromCSV(csvText);
+      toast({
+        title: language === 'it' ? 'Caricamento completato' : 'Load successful',
+        description: language === 'it' ? 'I cibi sono stati caricati nell\'app.' : 'Foods have been loaded into the app.',
+      });
+    } catch (error) {
+      console.error('Error loading default foods:', error);
+      toast({
+        title: language === 'it' ? 'Errore nel caricamento' : 'Load error',
+        description: language === 'it' ? 'Si è verificato un errore durante il caricamento dei cibi.' : 'An error occurred while loading foods.',
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleExportFoodsCSV = () => {
     try {
       const csv = exportFoodsAsCSV();
@@ -471,6 +490,16 @@ export default function Settings() {
             >
               <Upload className="w-4 h-4 mr-2" />
               {language === 'it' ? 'Carica Cibi (CSV)' : 'Upload Foods (CSV)'}
+            </Button>
+
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={handleLoadDefaultFoods}
+              data-testid="button-load-default-foods"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              {language === 'it' ? 'Carica Cibi Predefiniti' : 'Load Default Foods'}
             </Button>
 
             <div className="border-t border-card-border my-3"></div>
