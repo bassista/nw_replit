@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Heart, ShoppingCart, Calendar, Edit2, Trash2 } from "lucide-react";
+import { Heart, ShoppingCart, Calendar, Edit2, Trash2, Beef, Wheat, Droplets } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface MealCardProps {
@@ -73,14 +73,17 @@ export default function MealCard({
           <Badge variant="secondary" className="text-xs font-semibold">
             {meal.totalCalories} kcal
           </Badge>
-          <Badge variant="outline" className="text-xs">
-            P: {meal.totalProtein}g
+          <Badge variant="outline" className="text-xs flex items-center gap-1">
+            <Beef className="w-3 h-3" />
+            {meal.totalProtein}g
           </Badge>
-          <Badge variant="outline" className="text-xs">
-            C: {meal.totalCarbs}g
+          <Badge variant="outline" className="text-xs flex items-center gap-1">
+            <Wheat className="w-3 h-3" />
+            {meal.totalCarbs}g
           </Badge>
-          <Badge variant="outline" className="text-xs">
-            G: {meal.totalFat}g
+          <Badge variant="outline" className="text-xs flex items-center gap-1">
+            <Droplets className="w-3 h-3" />
+            {meal.totalFat}g
           </Badge>
         </div>
 
