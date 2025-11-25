@@ -7,6 +7,25 @@ import {
 import React, { useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useLanguage } from "@/lib/languageContext";
+
+// Mapping for chart data key translations
+const getKeyLabel = (key: string, language: "it" | "en"): string => {
+  const translations: Record<string, Record<"it" | "en", string>> = {
+    calories: { it: "Calorie", en: "Calories" },
+    protein: { it: "Proteine", en: "Protein" },
+    carbs: { it: "Carboidrati", en: "Carbs" },
+    fat: { it: "Grassi", en: "Fat" },
+    water: { it: "Acqua", en: "Water" },
+    glucosio: { it: "Glucosio", en: "Glucose" },
+    insulina: { it: "Insulina", en: "Insulin" },
+    score: { it: "Punteggio", en: "Score" },
+    weight: { it: "Peso", en: "Weight" },
+    frequency: { it: "Frequenza", en: "Frequency" },
+    consistency: { it: "Consistenza", en: "Consistency" },
+  };
+  return translations[key]?.[language] || key;
+};
 
 interface StatisticsChartProps {
   type: "pie" | "line" | "bar" | "area" | "composed" | "table" | "top-foods";
@@ -29,6 +48,7 @@ const chartLineColor = 'hsl(var(--chart-1))';
 const chartFillColor = 'hsl(var(--chart-2))';
 
 export default function StatisticsChart({ type, data, title, onPeriodChange, columns, metricOptions }: StatisticsChartProps) {
+  const { language } = useLanguage();
   const [selectedMetric, setSelectedMetric] = useState(metricOptions?.[0] || 'calorie');
 
   const renderChart = () => {
@@ -142,6 +162,7 @@ export default function StatisticsChart({ type, data, title, onPeriodChange, col
                   key={key}
                   type="monotone" 
                   dataKey={key}
+                  name={getKeyLabel(key, language)}
                   stroke={COLORS[idx % COLORS.length]}
                   strokeWidth={2}
                   dot={false}
@@ -167,6 +188,7 @@ export default function StatisticsChart({ type, data, title, onPeriodChange, col
                   key={key}
                   type="monotone" 
                   dataKey={key}
+                  name={getKeyLabel(key, language)}
                   stroke={COLORS[idx % COLORS.length]}
                   fill={COLORS[idx % COLORS.length]}
                   fillOpacity={0.6}
@@ -191,6 +213,7 @@ export default function StatisticsChart({ type, data, title, onPeriodChange, col
                 <Bar 
                   key={key}
                   dataKey={key}
+                  name={getKeyLabel(key, language)}
                   fill={COLORS[idx % COLORS.length]}
                 />
               ))}
@@ -211,9 +234,9 @@ export default function StatisticsChart({ type, data, title, onPeriodChange, col
               <Legend />
               {data.length > 0 && Object.keys(data[0]).filter(k => k !== 'name').map((key, idx) => {
                 if (idx === 0) {
-                  return <Bar key={key} dataKey={key} fill={COLORS[idx % COLORS.length]} />;
+                  return <Bar key={key} dataKey={key} name={getKeyLabel(key, language)} fill={COLORS[idx % COLORS.length]} />;
                 } else {
-                  return <Line key={key} type="monotone" dataKey={key} stroke={COLORS[idx % COLORS.length]} strokeWidth={2} />;
+                  return <Line key={key} type="monotone" dataKey={key} name={getKeyLabel(key, language)} stroke={COLORS[idx % COLORS.length]} strokeWidth={2} />;
                 }
               })}
             </ComposedChart>

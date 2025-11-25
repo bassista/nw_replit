@@ -6,6 +6,7 @@ import { BarChart3, Award } from "lucide-react";
 import { useState, useEffect } from "react";
 import { format, subDays } from "date-fns";
 import { it } from "date-fns/locale";
+import { useLanguage } from "@/lib/languageContext";
 import { 
   getDailyMeal, 
   loadSettings,
@@ -37,6 +38,7 @@ import {
 import type { Badge } from "@shared/schema";
 
 export default function Stats() {
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<"charts" | "badges">("charts");
   const [macroData, setMacroData] = useState<any[]>([]);
   const [calorieData, setCalorieData] = useState<any[]>([]);
@@ -239,22 +241,22 @@ export default function Stats() {
     // ===== BADGES =====
     const allBadges = [
       // Easy Tier
-      { id: '5', name: 'First Meal Logged', description: 'Log any food or meal in the diary for the first time.', unlocked: false },
-      { id: '6', name: 'Meal Creator', description: 'Create one custom meal.', unlocked: false },
-      { id: '7', name: 'First Favorite', description: 'Mark one food as a favorite.', unlocked: false },
-      { id: '8', name: 'Scanner Pro', description: 'Add a new food by scanning its barcode.', unlocked: false },
-      { id: '9', name: 'List Specialist', description: 'Create one custom shopping list.', unlocked: false },
+      { id: '5', name: t.badges.firstMealLogged, description: t.badges.firstMealDescription, unlocked: false },
+      { id: '6', name: t.badges.mealCreator, description: t.badges.mealCreatorDescription, unlocked: false },
+      { id: '7', name: t.badges.firstFavorite, description: t.badges.firstFavoriteDescription, unlocked: false },
+      { id: '8', name: t.badges.scannerPro, description: t.badges.scannerProDescription, unlocked: false },
+      { id: '9', name: t.badges.listSpecialist, description: t.badges.listSpecialistDescription, unlocked: false },
       // Medium Tier
-      { id: '10', name: '7-Day Streak', description: 'Log at least one food or meal for 7 consecutive days.', unlocked: false },
-      { id: '11', name: 'Hydration Marathoner', description: 'Meet the daily water intake goal for 7 consecutive days.', unlocked: false },
-      { id: '12', name: 'Pro Planner', description: 'Create a total of 10 custom meals.', unlocked: false },
-      { id: '13', name: 'Favorite Collector', description: 'Save 25 different foods to the favorites list.', unlocked: false },
-      { id: '14', name: '30-Day Streak', description: 'Log at least one food or meal for 30 consecutive days.', unlocked: false },
+      { id: '10', name: t.badges.sevenDayStreak, description: t.badges.sevenDayStreakDescription, unlocked: false },
+      { id: '11', name: t.badges.hydrationMarathoner, description: t.badges.hydrationMarathonerDescription, unlocked: false },
+      { id: '12', name: t.badges.proPlanner, description: t.badges.proPlannerDescription, unlocked: false },
+      { id: '13', name: t.badges.favoriteCollector, description: t.badges.favoriteCollectorDescription, unlocked: false },
+      { id: '14', name: t.badges.thirtyDayStreak, description: t.badges.thirtyDayStreakDescription, unlocked: false },
       // Hard Tier
-      { id: '15', name: 'Hydration Monarch', description: 'Meet the daily water intake goal for 30 consecutive days.', unlocked: false },
-      { id: '16', name: 'Supreme Chef', description: 'Create a total of 50 custom meals.', unlocked: false },
-      { id: '17', name: 'Guru of Favorites', description: 'Save 100 different foods in the favorites list.', unlocked: false },
-      { id: '18', name: 'Legend of Perseverance', description: 'Log at least one food or meal for 100 consecutive days.', unlocked: false },
+      { id: '15', name: t.badges.hydrationMonarch, description: t.badges.hydrationMonarchDescription, unlocked: false },
+      { id: '16', name: t.badges.supremeChef, description: t.badges.supremeChefDescription, unlocked: false },
+      { id: '17', name: t.badges.guruOfFavorites, description: t.badges.guruOfFavoritesDescription, unlocked: false },
+      { id: '18', name: t.badges.legendOfPerseverance, description: t.badges.legendOfPerseveranceDescription, unlocked: false },
     ];
 
     let loadedBadges = loadBadges();
