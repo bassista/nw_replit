@@ -15,9 +15,24 @@ import {
   checkWaterGoalToday,
   checkNutritionalGoalsSevenDays,
   checkPerfectWeek,
+  checkFirstMealLogged,
+  checkMealCreator,
+  checkFirstFavorite,
+  checkScannerPro,
+  checkListSpecialist,
+  checkHydrationMarathoner,
+  checkProPlanner,
+  checkFavoriteCollector,
+  checkThirtyConsecutiveDays,
+  checkHydrationMonarch,
+  checkSupremeChef,
+  checkGuruOfFavorites,
+  checkLegendOfPerseverance,
   loadFoods,
   getWaterIntake,
   getHealthData,
+  loadMeals,
+  loadShoppingLists,
 } from "@/lib/storage";
 import type { Badge } from "@shared/schema";
 
@@ -225,30 +240,23 @@ export default function Stats() {
     let loadedBadges = loadBadges();
     if (loadedBadges.length === 0) {
       loadedBadges = [
-        {
-          id: '1',
-          name: '7 Giorni Consecutivi',
-          description: 'Hai tracciato i tuoi pasti per 7 giorni di fila',
-          unlocked: false,
-        },
-        {
-          id: '2',
-          name: 'Obiettivo Acqua',
-          description: 'Hai raggiunto l\'obiettivo di idratazione',
-          unlocked: false,
-        },
-        {
-          id: '3',
-          name: 'Maestro dei Nutrienti',
-          description: 'Raggiungi tutti gli obiettivi nutrizionali per 7 giorni',
-          unlocked: false,
-        },
-        {
-          id: '4',
-          name: 'Settimana Perfetta',
-          description: 'Ottieni un punteggio A+ per 7 giorni consecutivi',
-          unlocked: false,
-        },
+        // Easy Tier
+        { id: '5', name: 'First Meal Logged', description: 'Log any food or meal in the diary for the first time.', unlocked: false },
+        { id: '6', name: 'Meal Creator', description: 'Create one custom meal.', unlocked: false },
+        { id: '7', name: 'First Favorite', description: 'Mark one food as a favorite.', unlocked: false },
+        { id: '8', name: 'Scanner Pro', description: 'Add a new food by scanning its barcode.', unlocked: false },
+        { id: '9', name: 'List Specialist', description: 'Create one custom shopping list.', unlocked: false },
+        // Medium Tier
+        { id: '10', name: '7-Day Streak', description: 'Log at least one food or meal for 7 consecutive days.', unlocked: false },
+        { id: '11', name: 'Hydration Marathoner', description: 'Meet the daily water intake goal for 7 consecutive days.', unlocked: false },
+        { id: '12', name: 'Pro Planner', description: 'Create a total of 10 custom meals.', unlocked: false },
+        { id: '13', name: 'Favorite Collector', description: 'Save 25 different foods to the favorites list.', unlocked: false },
+        { id: '14', name: '30-Day Streak', description: 'Log at least one food or meal for 30 consecutive days.', unlocked: false },
+        // Hard Tier
+        { id: '15', name: 'Hydration Monarch', description: 'Meet the daily water intake goal for 30 consecutive days.', unlocked: false },
+        { id: '16', name: 'Supreme Chef', description: 'Create a total of 50 custom meals.', unlocked: false },
+        { id: '17', name: 'Guru of Favorites', description: 'Save 100 different foods in the favorites list.', unlocked: false },
+        { id: '18', name: 'Legend of Perseverance', description: 'Log at least one food or meal for 100 consecutive days.', unlocked: false },
       ];
       saveBadges(loadedBadges);
     }
@@ -258,15 +266,20 @@ export default function Stats() {
 
       let shouldUnlock = false;
       
-      if (badge.id === '1' && checkSevenConsecutiveDays()) {
-        shouldUnlock = true;
-      } else if (badge.id === '2' && checkWaterGoalToday(settings)) {
-        shouldUnlock = true;
-      } else if (badge.id === '3' && checkNutritionalGoalsSevenDays(settings)) {
-        shouldUnlock = true;
-      } else if (badge.id === '4' && checkPerfectWeek(settings)) {
-        shouldUnlock = true;
-      }
+      if (badge.id === '5' && checkFirstMealLogged()) shouldUnlock = true;
+      else if (badge.id === '6' && checkMealCreator()) shouldUnlock = true;
+      else if (badge.id === '7' && checkFirstFavorite()) shouldUnlock = true;
+      else if (badge.id === '8' && checkScannerPro()) shouldUnlock = true;
+      else if (badge.id === '9' && checkListSpecialist()) shouldUnlock = true;
+      else if (badge.id === '10' && checkSevenConsecutiveDays()) shouldUnlock = true;
+      else if (badge.id === '11' && checkHydrationMarathoner(settings)) shouldUnlock = true;
+      else if (badge.id === '12' && checkProPlanner()) shouldUnlock = true;
+      else if (badge.id === '13' && checkFavoriteCollector()) shouldUnlock = true;
+      else if (badge.id === '14' && checkThirtyConsecutiveDays()) shouldUnlock = true;
+      else if (badge.id === '15' && checkHydrationMonarch(settings)) shouldUnlock = true;
+      else if (badge.id === '16' && checkSupremeChef()) shouldUnlock = true;
+      else if (badge.id === '17' && checkGuruOfFavorites()) shouldUnlock = true;
+      else if (badge.id === '18' && checkLegendOfPerseverance()) shouldUnlock = true;
 
       if (shouldUnlock) {
         return {

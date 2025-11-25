@@ -301,6 +301,104 @@ export function checkPerfectWeek(settings: Settings): boolean {
   return true;
 }
 
+// Badge check functions
+export function checkFirstMealLogged(): boolean {
+  const today = new Date().toISOString().split('T')[0];
+  const meals = getDailyMeal(today);
+  return meals.length > 0;
+}
+
+export function checkMealCreator(): boolean {
+  const meals = loadMeals();
+  return meals.length > 0;
+}
+
+export function checkFirstFavorite(): boolean {
+  const foods = loadFoods();
+  return foods.some(f => f.isFavorite);
+}
+
+export function checkScannerPro(): boolean {
+  // Check if any food has barcode-like id (9-15 digits or EAN format)
+  const foods = loadFoods();
+  return foods.some(f => /^\d{8,15}$/.test(f.id));
+}
+
+export function checkListSpecialist(): boolean {
+  const lists = loadShoppingLists();
+  return lists.length > 0;
+}
+
+export function checkHydrationMarathoner(settings: Settings): boolean {
+  const today = new Date();
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    const dateKey = date.toISOString().split('T')[0];
+    const waterToday = getWaterIntake(dateKey);
+    if (waterToday < settings.waterTargetMl) return false;
+  }
+  return true;
+}
+
+export function checkProPlanner(): boolean {
+  const meals = loadMeals();
+  return meals.length >= 10;
+}
+
+export function checkFavoriteCollector(): boolean {
+  const foods = loadFoods();
+  const favorites = foods.filter(f => f.isFavorite);
+  return favorites.length >= 25;
+}
+
+export function checkThirtyConsecutiveDays(): boolean {
+  const today = new Date();
+  for (let i = 29; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    const dateKey = date.toISOString().split('T')[0];
+    const meals = getDailyMeal(dateKey);
+    if (meals.length === 0) return false;
+  }
+  return true;
+}
+
+export function checkHydrationMonarch(settings: Settings): boolean {
+  const today = new Date();
+  for (let i = 29; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    const dateKey = date.toISOString().split('T')[0];
+    const waterToday = getWaterIntake(dateKey);
+    if (waterToday < settings.waterTargetMl) return false;
+  }
+  return true;
+}
+
+export function checkSupremeChef(): boolean {
+  const meals = loadMeals();
+  return meals.length >= 50;
+}
+
+export function checkGuruOfFavorites(): boolean {
+  const foods = loadFoods();
+  const favorites = foods.filter(f => f.isFavorite);
+  return favorites.length >= 100;
+}
+
+export function checkLegendOfPerseverance(): boolean {
+  const today = new Date();
+  for (let i = 99; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    const dateKey = date.toISOString().split('T')[0];
+    const meals = getDailyMeal(dateKey);
+    if (meals.length === 0) return false;
+  }
+  return true;
+}
+
 // CSV Export/Import for Foods
 export function exportFoodsAsCSV(): string {
   const foods = loadFoods();
