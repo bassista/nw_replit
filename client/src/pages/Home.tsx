@@ -21,17 +21,19 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
-import { Calendar, ChevronLeft, ChevronRight, Plus, Trash2, Search, Edit, Beef, Wheat, Droplets, Flame } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, Plus, Trash2, Search, Edit, Beef, Wheat, Droplets, Flame, Copy } from "lucide-react";
 import { useState, useEffect } from "react";
 import { format, addDays, subDays } from "date-fns";
 import { it } from "date-fns/locale";
 import { useLanguage } from "@/lib/languageContext";
-import { getDailyMeal, saveDailyMeal, loadSettings, getWaterIntake, saveWaterIntake, loadFoods, calculateDailyScore, type DailyMealItem } from "@/lib/storage";
+import { getDailyMeal, saveDailyMeal, loadSettings, getWaterIntake, saveWaterIntake, loadFoods, calculateDailyScore, loadMeals, loadWeeklyAssignments, type DailyMealItem, type Meal } from "@/lib/storage";
 import type { FoodItem } from "@shared/schema";
+import { useToast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 
 export default function Home() {
+  const { toast } = useToast();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [waterMl, setWaterMl] = useState(0);
   const [dailyMealItems, setDailyMealItems] = useState<DailyMealItem[]>([]);
@@ -44,6 +46,8 @@ export default function Home() {
   const [selectedQuantity, setSelectedQuantity] = useState(100);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+  const [showSelectMealDialog, setShowSelectMealDialog] = useState(false);
+  const [availableMeals, setAvailableMeals] = useState<Meal[]>([]);
   const { t } = useLanguage();
 
   const dateKey = format(currentDate, 'yyyy-MM-dd');
@@ -55,6 +59,7 @@ export default function Home() {
     setDailyMealItems(items);
     setWaterMl(water);
     setAvailableFoods(loadFoods());
+    setAvailableMeals(loadMeals());
   }, [dateKey]);
 
   // Save daily meal when items change
@@ -109,6 +114,60 @@ export default function Home() {
       setEditingItemId(item.id);
       setShowQuantityDialog(true);
     }
+  };
+
+  const handleCopyFromMeal = () => {
+    // Get current day of week (0 = Sunday, 1 = Monday, etc.)
+    const dayOfWeek = currentDate.getDay();
+    const assignments = loadWeeklyAssignments();
+    const assignment = assignments.find(a => a.dayOfWeek === dayOfWeek);
+
+    if (assignment) {
+      // Auto-copy meal for current day
+      const meal = availableMeals.find(m => m.id === assignment.mealId);
+      if (meal) {
+        copyMealToDiary(meal);
+      }
+    } else {
+      // Show dialog to select meal
+      setShowSelectMealDialog(true);
+    }
+  };
+
+  const copyMealToDiary = (meal: Meal) => {
+    if (!meal || meal.ingredients.length === 0) {
+      toast({
+        title: "Pasto vuoto",
+        description: "Il pasto non ha ingredienti.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Add all ingredients from the meal
+    meal.ingredients.forEach(ing => {
+      const food = availableFoods.find(f => f.id === ing.foodId);
+      if (food) {
+        const newItem: DailyMealItem = {
+          id: Date.now().toString() + Math.random(),
+          foodId: ing.foodId,
+          name: ing.name || food.name,
+          calories: Math.round(food.calories * ing.grams / 100),
+          protein: Math.round(food.protein * ing.grams / 100 * 10) / 10,
+          carbs: Math.round(food.carbs * ing.grams / 100 * 10) / 10,
+          fat: Math.round(food.fat * ing.grams / 100 * 10) / 10,
+          grams: ing.grams,
+        };
+        setDailyMealItems(prev => [...prev, newItem]);
+      }
+    });
+
+    toast({
+      title: "Pasto copiato",
+      description: `"${meal.name}" con ${meal.ingredients.length} ${meal.ingredients.length === 1 ? 'ingrediente' : 'ingredienti'} aggiunto al diario.`,
+    });
+
+    setShowSelectMealDialog(false);
   };
 
   const filteredFoods = availableFoods.filter(food =>
@@ -354,7 +413,7 @@ export default function Home() {
             )}
           </div>
 
-          <div className="p-4 border-t border-card-border">
+          <div className="p-4 border-t border-card-border space-y-2">
             <Button
               onClick={() => setShowAddFoodDialog(true)}
               variant="default"
@@ -364,6 +423,17 @@ export default function Home() {
               <Plus className="w-4 h-4 mr-2" />
               {t.diary.addFood}
             </Button>
+            {availableMeals.length > 0 && (
+              <Button
+                onClick={handleCopyFromMeal}
+                variant="outline"
+                className="w-full"
+                data-testid="button-copy-meal-to-diary"
+              >
+                <Copy className="w-4 h-4 mr-2" />
+                Copia dal Pasto
+              </Button>
+            )}
           </div>
         </Card>
       </div>
@@ -531,6 +601,44 @@ export default function Home() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Select Meal Dialog */}
+      <Dialog open={showSelectMealDialog} onOpenChange={setShowSelectMealDialog}>
+        <DialogContent className="max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Seleziona Pasto da Copiare</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-2">
+            {availableMeals.length > 0 ? (
+              availableMeals.map(meal => (
+                <button
+                  key={meal.id}
+                  onClick={() => copyMealToDiary(meal)}
+                  className="w-full text-left p-4 rounded-md border border-card-border hover-elevate space-y-2"
+                  data-testid={`button-select-meal-${meal.id}`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <p className="font-semibold text-foreground">{meal.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {meal.ingredientCount} {meal.ingredientCount === 1 ? 'ingrediente' : 'ingredienti'}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-foreground">{meal.totalCalories} kcal</p>
+                    </div>
+                  </div>
+                </button>
+              ))
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                Nessun pasto disponibile. Crea un pasto nella sezione Pasti.
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
