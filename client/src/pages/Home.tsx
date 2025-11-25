@@ -364,7 +364,7 @@ export default function Home() {
                   </Label>
                   <Slider
                     value={[selectedQuantity]}
-                    onValueChange={(value) => setSelectedQuantity(value[0])}
+                    onValueChange={(value) => setSelectedQuantity(Math.max(10, value[0]))}
                     min={10}
                     max={500}
                     step={5}

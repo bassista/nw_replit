@@ -115,8 +115,9 @@ export default function EditFoodDialog({
               <Input
                 id="calories"
                 type="number"
+                min="0"
                 value={formData.calories}
-                onChange={(e) => setFormData({ ...formData, calories: parseFloat(e.target.value) })}
+                onChange={(e) => setFormData({ ...formData, calories: Math.max(0, parseFloat(e.target.value)) })}
                 data-testid="input-calories"
               />
             </div>
@@ -127,8 +128,9 @@ export default function EditFoodDialog({
                 id="protein"
                 type="number"
                 step="0.1"
+                min="0"
                 value={formData.protein}
-                onChange={(e) => setFormData({ ...formData, protein: parseFloat(e.target.value) })}
+                onChange={(e) => setFormData({ ...formData, protein: Math.max(0, parseFloat(e.target.value)) })}
                 data-testid="input-protein"
               />
             </div>
@@ -139,8 +141,9 @@ export default function EditFoodDialog({
                 id="carbs"
                 type="number"
                 step="0.1"
+                min="0"
                 value={formData.carbs}
-                onChange={(e) => setFormData({ ...formData, carbs: parseFloat(e.target.value) })}
+                onChange={(e) => setFormData({ ...formData, carbs: Math.max(0, parseFloat(e.target.value)) })}
                 data-testid="input-carbs"
               />
             </div>
@@ -151,8 +154,9 @@ export default function EditFoodDialog({
                 id="fat"
                 type="number"
                 step="0.1"
+                min="0"
                 value={formData.fat}
-                onChange={(e) => setFormData({ ...formData, fat: parseFloat(e.target.value) })}
+                onChange={(e) => setFormData({ ...formData, fat: Math.max(0, parseFloat(e.target.value)) })}
                 data-testid="input-fat"
               />
             </div>
@@ -163,8 +167,9 @@ export default function EditFoodDialog({
                 id="fiber"
                 type="number"
                 step="0.1"
+                min="0"
                 value={formData.fiber || 0}
-                onChange={(e) => setFormData({ ...formData, fiber: parseFloat(e.target.value) })}
+                onChange={(e) => setFormData({ ...formData, fiber: Math.max(0, parseFloat(e.target.value)) })}
                 data-testid="input-fiber"
               />
             </div>
@@ -175,8 +180,9 @@ export default function EditFoodDialog({
                 id="sugar"
                 type="number"
                 step="0.1"
+                min="0"
                 value={formData.sugar || 0}
-                onChange={(e) => setFormData({ ...formData, sugar: parseFloat(e.target.value) })}
+                onChange={(e) => setFormData({ ...formData, sugar: Math.max(0, parseFloat(e.target.value)) })}
                 data-testid="input-sugar"
               />
             </div>
@@ -187,8 +193,9 @@ export default function EditFoodDialog({
                 id="sodium"
                 type="number"
                 step="0.1"
+                min="0"
                 value={formData.sodium || 0}
-                onChange={(e) => setFormData({ ...formData, sodium: parseFloat(e.target.value) })}
+                onChange={(e) => setFormData({ ...formData, sodium: Math.max(0, parseFloat(e.target.value)) })}
                 data-testid="input-sodium"
               />
             </div>
