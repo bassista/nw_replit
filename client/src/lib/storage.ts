@@ -325,8 +325,41 @@ export function exportFoodsAsCSV(): string {
   return [header, ...rows].join('\n');
 }
 
+// CSV Parser - handles quoted fields correctly
+function parseCSVLine(line: string): string[] {
+  const fields: string[] = [];
+  let current = '';
+  let inQuotes = false;
+  
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    const nextChar = line[i + 1];
+    
+    if (char === '"') {
+      if (inQuotes && nextChar === '"') {
+        // Escaped quote
+        current += '"';
+        i++; // Skip next quote
+      } else {
+        // Toggle quote state
+        inQuotes = !inQuotes;
+      }
+    } else if (char === ',' && !inQuotes) {
+      // Field separator
+      fields.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  
+  // Add last field
+  fields.push(current.trim());
+  return fields;
+}
+
 // CSV Import for Foods
-export function importFoodsFromCSV(csv: string) {
+export function importFoodsFromCSV(csv: string): FoodItem[] {
   const lines = csv.trim().split('\n');
   if (lines.length < 2) {
     throw new Error('CSV file is empty or invalid');
@@ -335,9 +368,16 @@ export function importFoodsFromCSV(csv: string) {
   const foods: FoodItem[] = [];
   for (let i = 1; i < lines.length; i++) {
     const line = lines[i];
-    const fields = line.split(',').map(f => f.trim().replace(/^"(.*)"$/, '$1'));
+    if (!line.trim()) continue; // Skip empty lines
+    
+    const fields = parseCSVLine(line);
 
     try {
+      if (fields.length < 10) {
+        console.warn(`Row ${i} has insufficient fields:`, fields.length);
+        continue;
+      }
+
       const id = fields[0];
       const calories = parseFloat(fields[2]);
       const protein = parseFloat(fields[3]);
@@ -347,7 +387,12 @@ export function importFoodsFromCSV(csv: string) {
       const sugar = parseFloat(fields[7]) || 0;
       const sodium = parseFloat(fields[8]) || 0;
 
-      const name_category = fields[9];
+      let name_category = fields[9];
+      // Remove quotes if present
+      if (name_category.startsWith('"') && name_category.endsWith('"')) {
+        name_category = name_category.slice(1, -1);
+      }
+
       let name = 'Unknown';
       let category = 'Senza categoria';
 
@@ -391,7 +436,7 @@ export function importFoodsFromCSV(csv: string) {
     throw new Error('No valid foods found in CSV file');
   }
 
-  saveFoods(foods);
+  return foods;
 }
 
 // Data Export/Import
