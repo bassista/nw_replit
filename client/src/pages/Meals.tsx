@@ -3,7 +3,7 @@ import MealCard from "@/components/MealCard";
 import WeeklyCalendar from "@/components/WeeklyCalendar";
 import AddMealDialog from "@/components/AddMealDialog";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,14 +14,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Heart, Calendar as CalendarIcon, ShoppingCart, Trash2 } from "lucide-react";
+import { Plus, Heart, ShoppingCart, Trash2, Search } from "lucide-react";
 import { useState, useEffect } from "react";
 import { loadFoods, loadMeals, saveMeals, loadWeeklyAssignments, assignMealToDay, removeMealFromDay, calculateMealNutrition, saveShoppingLists, loadShoppingLists } from "@/lib/storage";
 import type { Meal } from "@/lib/storage";
 import type { FoodItem } from "@shared/schema";
 
 export default function Meals() {
-  const [activeTab, setActiveTab] = useState<"meals" | "calendar">("meals");
   const [meals, setMeals] = useState<Meal[]>([]);
   const [foods, setFoods] = useState<FoodItem[]>([]);
   const [assignments, setAssignments] = useState<any[]>([]);
@@ -29,6 +28,8 @@ export default function Meals() {
   const [mealToDelete, setMealToDelete] = useState<string | null>(null);
   const [selectedDayForMeal, setSelectedDayForMeal] = useState<number | null>(null);
   const [draggedMealId, setDraggedMealId] = useState<string | undefined>();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
 
   useEffect(() => {
     const loadedFoods = loadFoods();
@@ -125,6 +126,13 @@ export default function Meals() {
     alert('Lista spesa generata e salvata!');
   };
 
+  // Filter meals by search and favorites
+  const filteredMeals = meals.filter(meal => {
+    const matchesSearch = meal.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFavorite = !showOnlyFavorites || meal.isFavorite;
+    return matchesSearch && matchesFavorite;
+  });
+
   return (
     <div className="min-h-screen bg-background pb-20">
       <TopBar 
@@ -134,121 +142,124 @@ export default function Meals() {
       />
 
       <div className="max-w-2xl mx-auto px-4 py-4 space-y-4">
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-          <TabsList className="w-full">
-            <TabsTrigger value="meals" className="flex-1" data-testid="tab-meals">
-              <Plus className="w-4 h-4 mr-2" />
-              I Miei Pasti
-            </TabsTrigger>
-            <TabsTrigger value="calendar" className="flex-1" data-testid="tab-calendar">
-              <CalendarIcon className="w-4 h-4 mr-2" />
-              Calendario
-            </TabsTrigger>
-          </TabsList>
+        {/* Create New Meal Button */}
+        <Button
+          className="w-full"
+          data-testid="button-create-meal"
+          onClick={() => setDialogOpen(true)}
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Crea Nuovo Pasto
+        </Button>
 
-          <TabsContent value="meals" className="space-y-4 mt-4">
-            <Button
-              className="w-full"
-              data-testid="button-create-meal"
-              onClick={() => setDialogOpen(true)}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Crea Nuovo Pasto
-            </Button>
+        {/* Weekly Calendar */}
+        <WeeklyCalendar 
+          weekStart={new Date()}
+          assignments={assignments}
+          onDayClick={handleDayClick}
+          onRemoveMeal={handleRemoveMealFromDay}
+          onDropMeal={handleDropOnCalendarDay}
+          draggedMealId={draggedMealId}
+        />
 
-            <div className="space-y-3">
-              {meals.length > 0 ? (
-                <>
-                  <div className="p-3 bg-primary/5 rounded-md border border-primary/20">
-                    <p className="text-xs text-primary font-medium text-center">
-                      💡 Trascina un pasto sul calendario per assegnarlo
-                    </p>
-                  </div>
-                  {meals.map(meal => (
-                    <MealCard 
-                      key={meal.id}
-                      meal={meal}
-                      isDragging={draggedMealId === meal.id}
-                      onToggleFavorite={handleToggleFavorite}
-                      onAddToShoppingList={() => console.log('TODO: Add to shopping list')}
-                      onAddToCalendar={(id) => {
-                        const meal = meals.find(m => m.id === id);
-                        if (meal) handleAssignMealToDay(0, meal);
-                      }}
-                      onClick={(id) => console.log('View meal:', id)}
-                      onDragStart={handleMealDragStart}
-                    />
-                  ))}
-                </>
-              ) : (
-                <div className="text-center py-12">
-                  <p className="text-muted-foreground">Nessun pasto creato. Inizia creando il primo pasto!</p>
-                </div>
-              )}
-            </div>
-          </TabsContent>
+        {/* Generate Shopping List Button */}
+        <Button
+          variant="outline"
+          className="w-full"
+          data-testid="button-generate-shopping-list"
+          onClick={handleGenerateShoppingList}
+        >
+          <ShoppingCart className="w-4 h-4 mr-2" />
+          Genera Lista Spesa Settimanale
+        </Button>
 
-          <TabsContent value="calendar" className="space-y-4 mt-4">
-            <WeeklyCalendar 
-              weekStart={new Date()}
-              assignments={assignments}
-              onDayClick={handleDayClick}
-              onRemoveMeal={handleRemoveMealFromDay}
-              onDropMeal={handleDropOnCalendarDay}
-              draggedMealId={draggedMealId}
-            />
+        {/* Drag & Drop Suggestion */}
+        <div className="p-3 bg-primary/5 rounded-md border border-primary/20">
+          <p className="text-xs text-primary font-medium text-center">
+            💡 Trascina un pasto sul calendario per assegnarlo, o clicca su un giorno per selezionare
+          </p>
+        </div>
 
-            {selectedDayForMeal !== null && (
-              <div className="space-y-3 p-4 bg-muted/50 rounded-md">
-                <p className="text-sm font-medium">Seleziona un pasto per {['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'][selectedDayForMeal]}</p>
-                <div className="space-y-2 max-h-48 overflow-y-auto">
-                  {meals.map(meal => (
-                    <Button
-                      key={meal.id}
-                      variant="outline"
-                      className="w-full justify-between"
-                      onClick={() => handleAssignMealToDay(selectedDayForMeal, meal)}
-                      data-testid={`button-assign-meal-${meal.id}`}
-                    >
-                      <span>{meal.name}</span>
-                      <span className="text-xs text-muted-foreground">{meal.totalCalories} kcal</span>
-                    </Button>
-                  ))}
-                </div>
+        {/* Search Bar */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Cerca pasti..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+            data-testid="input-search-meals"
+          />
+        </div>
+
+        {/* Favorites Filter Button */}
+        <Button
+          variant={showOnlyFavorites ? "default" : "outline"}
+          className="w-full"
+          data-testid="button-toggle-favorites"
+          onClick={() => setShowOnlyFavorites(!showOnlyFavorites)}
+        >
+          <Heart className={`w-4 h-4 mr-2 ${showOnlyFavorites ? 'fill-current' : ''}`} />
+          {showOnlyFavorites ? 'Mostrando: Solo Preferiti' : 'Mostra Solo Preferiti'}
+        </Button>
+
+        {/* Select Day Meal Dialog */}
+        {selectedDayForMeal !== null && (
+          <div className="space-y-3 p-4 bg-muted/50 rounded-md">
+            <p className="text-sm font-medium">Seleziona un pasto per {['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'][selectedDayForMeal]}</p>
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {meals.map(meal => (
                 <Button
-                  variant="ghost"
-                  className="w-full"
-                  onClick={() => setSelectedDayForMeal(null)}
+                  key={meal.id}
+                  variant="outline"
+                  className="w-full justify-between"
+                  onClick={() => handleAssignMealToDay(selectedDayForMeal, meal)}
+                  data-testid={`button-assign-meal-${meal.id}`}
                 >
-                  Annulla
+                  <span>{meal.name}</span>
+                  <span className="text-xs text-muted-foreground">{meal.totalCalories} kcal</span>
                 </Button>
-              </div>
-            )}
-
-            <Button
-              variant="outline"
-              className="w-full"
-              data-testid="button-generate-shopping-list"
-              onClick={handleGenerateShoppingList}
-            >
-              <ShoppingCart className="w-4 h-4 mr-2" />
-              Genera Lista Spesa Settimanale
-            </Button>
-
-            <div className="space-y-3">
-              <div className="p-4 bg-primary/5 rounded-md border border-primary/20">
-                <p className="text-sm text-primary font-medium text-center">
-                  ✨ Vai al tab "I Miei Pasti" e trascina i pasti qui!
-                </p>
-              </div>
-              <div className="p-4 bg-muted/50 rounded-md">
-                <p className="text-sm text-muted-foreground text-center">
-                  Puoi anche cliccare sui giorni per selezionare i pasti o rimuovere quelli esistenti
-                </p>
-              </div>
+              ))}
             </div>
-          </TabsContent>
-        </Tabs>
+            <Button
+              variant="ghost"
+              className="w-full"
+              onClick={() => setSelectedDayForMeal(null)}
+            >
+              Annulla
+            </Button>
+          </div>
+        )}
+
+        {/* Meals List */}
+        <div className="space-y-3">
+          {filteredMeals.length > 0 ? (
+            filteredMeals.map(meal => (
+              <MealCard 
+                key={meal.id}
+                meal={meal}
+                isDragging={draggedMealId === meal.id}
+                onToggleFavorite={handleToggleFavorite}
+                onAddToShoppingList={() => console.log('TODO: Add to shopping list')}
+                onAddToCalendar={(id) => {
+                  const meal = meals.find(m => m.id === id);
+                  if (meal) handleAssignMealToDay(0, meal);
+                }}
+                onClick={(id) => console.log('View meal:', id)}
+                onDragStart={handleMealDragStart}
+              />
+            ))
+          ) : meals.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">Nessun pasto creato. Inizia creando il primo pasto!</p>
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">Nessun pasto corrisponde ai filtri applicati</p>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Add Meal Dialog */}
