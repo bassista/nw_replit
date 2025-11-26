@@ -1,4 +1,5 @@
 import TopBar from "@/components/TopBar";
+import WaterTracker from "@/components/WaterTracker";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -167,6 +168,14 @@ export default function Health() {
             <ChevronRight className="w-5 h-5" />
           </Button>
         </div>
+
+        {/* Water Tracker */}
+        <WaterTracker 
+          mlConsumed={waterMl}
+          targetMl={settings.waterTargetMl}
+          glassCapacityMl={settings.glassCapacityMl}
+          onAddGlass={() => setWaterMl(prev => prev + settings.glassCapacityMl)}
+        />
 
         {/* Health Metrics */}
         <div className="space-y-4">

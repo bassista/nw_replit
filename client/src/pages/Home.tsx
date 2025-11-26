@@ -1,5 +1,4 @@
 import TopBar from "@/components/TopBar";
-import WaterTracker from "@/components/WaterTracker";
 import NutritionalGoalsCard from "@/components/NutritionalGoalsCard";
 import MealScoreCard from "@/components/MealScoreCard";
 import { Button } from "@/components/ui/button";
@@ -568,14 +567,6 @@ export default function Home() {
 
         {/* Nutritional Goals */}
         <NutritionalGoalsCard nutrients={mockNutrients} />
-
-        {/* Water Tracker */}
-        <WaterTracker 
-          mlConsumed={waterMl}
-          targetMl={settings.waterTargetMl}
-          glassCapacityMl={settings.glassCapacityMl}
-          onAddGlass={() => setWaterMl(prev => prev + settings.glassCapacityMl)}
-        />
       </div>
 
       {/* Add Food Dialog */}
