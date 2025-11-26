@@ -52,20 +52,19 @@ export default function BottomNav() {
           })}
 
           {/* More Button */}
-          <button
-            data-testid="nav-more"
-            onClick={() => setOpenMore(!openMore)}
-            className={`flex flex-col items-center justify-center gap-1 px-2 py-2 min-w-[64px] rounded-lg transition-colors duration-200 hover:bg-muted/50`}
-          >
-            <MoreVertical className="w-6 h-6 text-muted-foreground" strokeWidth={2} />
-            <span className="text-xs font-500 text-muted-foreground">Altro</span>
-          </button>
-        </div>
-      </nav>
+          <div className="relative">
+            <button
+              data-testid="nav-more"
+              onClick={() => setOpenMore(!openMore)}
+              className={`flex flex-col items-center justify-center gap-1 px-2 py-2 min-w-[64px] rounded-lg transition-colors duration-200 hover:bg-muted/50`}
+            >
+              <MoreVertical className="w-6 h-6 text-muted-foreground" strokeWidth={2} />
+              <span className="text-xs font-500 text-muted-foreground">Altro</span>
+            </button>
 
-      {/* More Menu - Dropdown */}
-      {openMore && (
-        <div className="fixed bottom-16 right-4 bg-card border border-card-border rounded-lg shadow-lg z-50 w-48">
+            {/* More Menu - Dropdown */}
+            {openMore && (
+              <div className="absolute bottom-full right-0 mb-2 bg-card border border-card-border rounded-lg shadow-lg z-50 w-48">
           <div className="flex items-center justify-between p-2 border-b border-card-border">
             <span className="text-sm font-semibold">Altro</span>
             <button onClick={() => setOpenMore(false)} className="text-muted-foreground hover:text-foreground">
