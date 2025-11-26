@@ -434,24 +434,6 @@ export default function Home() {
           </Button>
         </div>
 
-        {/* Daily Score */}
-        <MealScoreCard 
-          grade={grade}
-          explanation={explanation}
-          type="day"
-        />
-
-        {/* Nutritional Goals */}
-        <NutritionalGoalsCard nutrients={mockNutrients} />
-
-        {/* Water Tracker */}
-        <WaterTracker 
-          mlConsumed={waterMl}
-          targetMl={settings.waterTargetMl}
-          glassCapacityMl={settings.glassCapacityMl}
-          onAddGlass={() => setWaterMl(prev => prev + settings.glassCapacityMl)}
-        />
-
         {/* Daily Meal Section */}
         <Card className="overflow-hidden shadow-sm hover:shadow-md">
           <div className="p-4 bg-muted/50 flex items-center justify-between">
@@ -576,6 +558,24 @@ export default function Home() {
             )}
           </div>
         </Card>
+
+        {/* Daily Score */}
+        <MealScoreCard 
+          grade={grade}
+          explanation={explanation}
+          type="day"
+        />
+
+        {/* Nutritional Goals */}
+        <NutritionalGoalsCard nutrients={mockNutrients} />
+
+        {/* Water Tracker */}
+        <WaterTracker 
+          mlConsumed={waterMl}
+          targetMl={settings.waterTargetMl}
+          glassCapacityMl={settings.glassCapacityMl}
+          onAddGlass={() => setWaterMl(prev => prev + settings.glassCapacityMl)}
+        />
       </div>
 
       {/* Add Food Dialog */}
