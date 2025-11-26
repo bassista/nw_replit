@@ -352,8 +352,8 @@ export default function Foods() {
         </div>
 
         {/* Search and Filter */}
-        <div className="space-y-3">
-          <div className="relative">
+        <div className="flex gap-3 items-end">
+          <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input
               type="search"
@@ -366,7 +366,7 @@ export default function Foods() {
           </div>
 
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger data-testid="select-category-filter">
+            <SelectTrigger data-testid="select-category-filter" className="w-40">
               <SelectValue placeholder={t.foods.category} />
             </SelectTrigger>
             <SelectContent>
