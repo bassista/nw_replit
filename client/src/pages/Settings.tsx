@@ -30,11 +30,18 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Save, Download, Upload, Trash2, Plus, Edit2, ChevronDown, Info } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useState, useEffect } from "react";
 import { useLanguage } from "@/lib/languageContext";
 import type { Language } from "@/lib/i18n";
@@ -289,7 +296,7 @@ export default function Settings() {
                   <Label>{t.settings.itemsPerPage}: {settings.itemsPerPage}</Label>
                   <Slider
                     value={[settings.itemsPerPage]}
-                    onValueChange={(value) => setSettings({ ...settings, itemsPerPage: value[0] })}
+                    onValueChange={(value: number[]) => setSettings({ ...settings, itemsPerPage: value[0] })}
                     min={2}
                     max={48}
                     step={2}
@@ -558,7 +565,16 @@ export default function Settings() {
               <div className="border-t border-card-border pt-4">
                 <div className="flex items-center gap-2 mb-2">
                   <h4 className="font-semibold text-foreground">{language === 'it' ? 'Dati Alimenti CSV' : 'Foods CSV Data'}</h4>
-                  <Info className="w-4 h-4 text-muted-foreground cursor-help" title={language === 'it' ? 'Importa o scarica i tuoi dati alimentari in formato CSV' : 'Import or download your food data in CSV format'} />
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="w-4 h-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {language === 'it' ? 'Importa o scarica i tuoi dati alimentari in formato CSV' : 'Import or download your food data in CSV format'}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
                 <p className="text-sm text-muted-foreground mb-3">{language === 'it' ? 'Carica o scarica un file CSV con i tuoi dati alimentari.' : 'Upload or download a CSV file with your food data.'}</p>
                 <div className="flex gap-2">
