@@ -179,22 +179,6 @@ export default function Health() {
 
         {/* Health Metrics */}
         <div className="space-y-4">
-          {/* Idratazione */}
-          <Card className="p-5">
-            <div className="space-y-3">
-              <h3 className="font-semibold text-lg text-foreground">Idratazione</h3>
-              <p className="text-2xl font-bold text-foreground">
-                {waterMl} <span className="text-sm text-muted-foreground">ml / {settings.waterTargetMl} ml</span>
-              </p>
-              <div className="w-full bg-muted rounded-full h-2">
-                <div
-                  className="bg-blue-500 h-2 rounded-full transition-all"
-                  style={{ width: `${Math.min((waterMl / settings.waterTargetMl) * 100, 100)}%` }}
-                />
-              </div>
-            </div>
-          </Card>
-
           {/* Peso Corporeo */}
           <Card className="p-5">
             <div className="space-y-3">
