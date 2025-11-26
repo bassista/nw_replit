@@ -29,7 +29,12 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Save, Download, Upload, Trash2, Plus, Edit2 } from "lucide-react";
+import { Save, Download, Upload, Trash2, Plus, Edit2, ChevronDown, Info } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { useState, useEffect } from "react";
 import { useLanguage } from "@/lib/languageContext";
 import type { Language } from "@/lib/i18n";
@@ -46,6 +51,7 @@ export default function Settings() {
   const [editingCategoryIndex, setEditingCategoryIndex] = useState<number | null>(null);
   const [settings, setSettings] = useState(loadSettings());
   const [categories, setCategories] = useState(loadCategories());
+  const [openDataSection, setOpenDataSection] = useState(true);
 
   // Save settings when they change
   useEffect(() => {
@@ -462,74 +468,103 @@ export default function Settings() {
         </Card>
 
         {/* Data Management */}
-        <Card className="p-4">
-          <h3 className="font-semibold text-foreground mb-4">{t.settings.dataManagement}</h3>
-          <div className="space-y-3">
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={handleExportData}
-              data-testid="button-export"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              {t.settings.exportData}
-            </Button>
+        <Collapsible open={openDataSection} onOpenChange={setOpenDataSection}>
+          <Card className="p-4">
+            <CollapsibleTrigger asChild>
+              <button className="w-full flex items-center justify-between cursor-pointer hover:opacity-70 transition-opacity">
+                <div className="text-left">
+                  <h3 className="font-semibold text-foreground">{language === 'it' ? 'Importa i tuoi dati alimentari o ripristina l\'applicazione.' : 'Import your food data or restore the application.'}</h3>
+                </div>
+                <ChevronDown className={`w-5 h-5 transition-transform ${openDataSection ? 'rotate-180' : ''}`} />
+              </button>
+            </CollapsibleTrigger>
 
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={handleImportData}
-              data-testid="button-import"
-            >
-              <Upload className="w-4 h-4 mr-2" />
-              {t.settings.importData}
-            </Button>
+            <CollapsibleContent className="pt-4 space-y-4">
+              {/* Dati Alimenti di Base */}
+              <div className="border-t border-card-border pt-4">
+                <h4 className="font-semibold text-foreground mb-2">{language === 'it' ? 'Dati Alimenti di Base' : 'Basic Foods Data'}</h4>
+                <p className="text-sm text-muted-foreground mb-3">{language === 'it' ? 'Carica una lista predefinita di alimenti nell\'app.' : 'Load a predefined list of foods into the app.'}</p>
+                <Button
+                  className="bg-green-500 hover:bg-green-600 text-white w-auto"
+                  onClick={handleLoadDefaultFoods}
+                  data-testid="button-load-default-foods"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  {language === 'it' ? 'Carica' : 'Load'}
+                </Button>
+              </div>
 
-            <div className="border-t border-card-border my-3"></div>
+              {/* Dati Alimenti CSV */}
+              <div className="border-t border-card-border pt-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <h4 className="font-semibold text-foreground">{language === 'it' ? 'Dati Alimenti CSV' : 'Foods CSV Data'}</h4>
+                  <Info className="w-4 h-4 text-muted-foreground cursor-help" title={language === 'it' ? 'Importa o scarica i tuoi dati alimentari in formato CSV' : 'Import or download your food data in CSV format'} />
+                </div>
+                <p className="text-sm text-muted-foreground mb-3">{language === 'it' ? 'Carica o scarica un file CSV con i tuoi dati alimentari.' : 'Upload or download a CSV file with your food data.'}</p>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={handleImportFoodsCSV}
+                    data-testid="button-import-foods-csv"
+                    className="flex-1"
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    {language === 'it' ? 'Importa da CSV' : 'Import from CSV'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleExportFoodsCSV}
+                    data-testid="button-export-foods-csv"
+                    className="flex-1"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    {language === 'it' ? 'Scarica in CSV' : 'Export to CSV'}
+                  </Button>
+                </div>
+              </div>
 
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={handleExportFoodsCSV}
-              data-testid="button-export-foods-csv"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              {language === 'it' ? 'Scarica Cibi (CSV)' : 'Download Foods (CSV)'}
-            </Button>
+              {/* Backup e Ripristino */}
+              <div className="border-t border-card-border pt-4">
+                <h4 className="font-semibold text-foreground mb-2">{language === 'it' ? 'Backup e Ripristino' : 'Backup & Restore'}</h4>
+                <p className="text-sm text-muted-foreground mb-3">{language === 'it' ? 'Scarica tutti i tuoi dati su un file o ripristinali da un backup.' : 'Download all your data to a file or restore from a backup.'}</p>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={handleExportData}
+                    data-testid="button-export"
+                    className="flex-1"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    {language === 'it' ? 'Scarica Dati' : 'Download Data'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleImportData}
+                    data-testid="button-import"
+                    className="flex-1"
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    {language === 'it' ? 'Carica da Backup' : 'Restore Backup'}
+                  </Button>
+                </div>
+              </div>
 
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={handleImportFoodsCSV}
-              data-testid="button-import-foods-csv"
-            >
-              <Upload className="w-4 h-4 mr-2" />
-              {language === 'it' ? 'Carica Cibi (CSV)' : 'Upload Foods (CSV)'}
-            </Button>
-
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={handleLoadDefaultFoods}
-              data-testid="button-load-default-foods"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              {language === 'it' ? 'Carica Cibi Predefiniti' : 'Load Default Foods'}
-            </Button>
-
-            <div className="border-t border-card-border my-3"></div>
-
-            <Button
-              variant="destructive"
-              className="w-full"
-              onClick={() => setShowResetDialog(true)}
-              data-testid="button-reset"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              {t.settings.resetDatabase}
-            </Button>
-          </div>
-        </Card>
+              {/* Zona di Pericolo */}
+              <div className="border-t border-card-border pt-4">
+                <h4 className="font-semibold text-red-600 mb-3">{language === 'it' ? 'Zona di pericolo' : 'Danger Zone'}</h4>
+                <Button
+                  variant="destructive"
+                  className="w-auto"
+                  onClick={() => setShowResetDialog(true)}
+                  data-testid="button-reset"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  {language === 'it' ? 'Cancella tutti i dati' : 'Delete all data'}
+                </Button>
+              </div>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
 
         {/* Save Button */}
         <Button

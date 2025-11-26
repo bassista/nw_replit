@@ -65,37 +65,40 @@ export default function BottomNav() {
             {/* More Menu - Dropdown */}
             {openMore && (
               <div className="absolute bottom-full right-0 mb-2 bg-card border border-card-border rounded-lg shadow-lg z-50 w-48">
-          <div className="flex items-center justify-between p-2 border-b border-card-border">
-            <span className="text-sm font-semibold">Altro</span>
-            <button onClick={() => setOpenMore(false)} className="text-muted-foreground hover:text-foreground">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-          <div className="space-y-1 p-1">
-            {moreItems.map((item) => {
-              const isActive = location === item.path;
-              const Icon = item.icon;
-              
-              return (
-                <Link key={item.path} href={item.path}>
-                  <button
-                    onClick={() => setOpenMore(false)}
-                    data-testid={`nav-more-${item.label.toLowerCase()}`}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${
-                      isActive 
-                        ? 'bg-primary/10 text-primary' 
-                        : 'text-foreground hover:bg-muted/50'
-                    }`}
-                  >
-                    <Icon className="w-5 h-5" />
-                    <span className="text-sm font-medium">{item.label}</span>
+                <div className="flex items-center justify-between p-2 border-b border-card-border">
+                  <span className="text-sm font-semibold">Altro</span>
+                  <button onClick={() => setOpenMore(false)} className="text-muted-foreground hover:text-foreground">
+                    <X className="w-4 h-4" />
                   </button>
-                </Link>
-              );
-            })}
+                </div>
+                <div className="space-y-1 p-1">
+                  {moreItems.map((item) => {
+                    const isActive = location === item.path;
+                    const Icon = item.icon;
+                    
+                    return (
+                      <Link key={item.path} href={item.path}>
+                        <button
+                          onClick={() => setOpenMore(false)}
+                          data-testid={`nav-more-${item.label.toLowerCase()}`}
+                          className={`w-full flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${
+                            isActive 
+                              ? 'bg-primary/10 text-primary' 
+                              : 'text-foreground hover:bg-muted/50'
+                          }`}
+                        >
+                          <Icon className="w-5 h-5" />
+                          <span className="text-sm font-medium">{item.label}</span>
+                        </button>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         </div>
-      )}
+      </nav>
 
       {/* Backdrop */}
       {openMore && (
