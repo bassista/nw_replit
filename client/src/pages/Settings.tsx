@@ -52,6 +52,11 @@ export default function Settings() {
   const [settings, setSettings] = useState(loadSettings());
   const [categories, setCategories] = useState(loadCategories());
   const [openDataSection, setOpenDataSection] = useState(true);
+  const [openGeneral, setOpenGeneral] = useState(true);
+  const [openNutritional, setOpenNutritional] = useState(true);
+  const [openCategories, setOpenCategories] = useState(true);
+  const [openWater, setOpenWater] = useState(true);
+  const [openReminders, setOpenReminders] = useState(true);
 
   // Save settings when they change
   useEffect(() => {
@@ -256,42 +261,65 @@ export default function Settings() {
 
       <div className="max-w-2xl mx-auto px-4 py-4 space-y-4">
         {/* General Settings */}
-        <Card className="p-4">
-          <h3 className="font-semibold text-foreground mb-4">{t.settings.general}</h3>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="language">{t.settings.language}</Label>
-              <Select value={language} onValueChange={(v) => setLanguage(v as Language)}>
-                <SelectTrigger data-testid="select-language">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="it">Italiano</SelectItem>
-                  <SelectItem value="en">English</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+        <Collapsible open={openGeneral} onOpenChange={setOpenGeneral}>
+          <Card className="p-4">
+            <CollapsibleTrigger asChild>
+              <button className="w-full flex items-center justify-between cursor-pointer hover:opacity-70 transition-opacity">
+                <h3 className="font-semibold text-foreground">{t.settings.general}</h3>
+                <ChevronDown className={`w-5 h-5 transition-transform ${openGeneral ? 'rotate-180' : ''}`} />
+              </button>
+            </CollapsibleTrigger>
 
-            <div className="space-y-2">
-              <Label htmlFor="items-per-page">{t.settings.itemsPerPage}</Label>
-              <Input
-                id="items-per-page"
-                type="number"
-                value={settings.itemsPerPage}
-                onChange={(e) => setSettings({ ...settings, itemsPerPage: parseInt(e.target.value) })}
-                data-testid="input-items-per-page"
-              />
-            </div>
-          </div>
-        </Card>
+            <CollapsibleContent className="pt-4">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="language">{t.settings.language}</Label>
+                  <Select value={language} onValueChange={(v) => setLanguage(v as Language)}>
+                    <SelectTrigger data-testid="select-language">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="it">Italiano</SelectItem>
+                      <SelectItem value="en">English</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>{t.settings.itemsPerPage}: {settings.itemsPerPage}</Label>
+                  <Slider
+                    value={[settings.itemsPerPage]}
+                    onValueChange={(value) => setSettings({ ...settings, itemsPerPage: value[0] })}
+                    min={2}
+                    max={48}
+                    step={2}
+                    data-testid="slider-items-per-page"
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>2</span>
+                    <span>48</span>
+                  </div>
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
 
         {/* Nutritional Goals */}
-        <Card className="p-4">
-          <div className="mb-4">
-            <h3 className="font-semibold text-foreground">{t.settings.nutritionalGoalsTitle}</h3>
-            <p className="text-sm text-muted-foreground">{t.settings.nutritionalGoalsDescription}</p>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
+        <Collapsible open={openNutritional} onOpenChange={setOpenNutritional}>
+          <Card className="p-4">
+            <CollapsibleTrigger asChild>
+              <button className="w-full flex items-center justify-between cursor-pointer hover:opacity-70 transition-opacity mb-4">
+                <div className="text-left">
+                  <h3 className="font-semibold text-foreground">{t.settings.nutritionalGoalsTitle}</h3>
+                  <p className="text-sm text-muted-foreground">{t.settings.nutritionalGoalsDescription}</p>
+                </div>
+                <ChevronDown className={`w-5 h-5 transition-transform flex-shrink-0 ml-2 ${openNutritional ? 'rotate-180' : ''}`} />
+              </button>
+            </CollapsibleTrigger>
+
+            <CollapsibleContent>
+              <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="calorie-goal">{t.foods.calories} (kcal)</Label>
               <Input
@@ -333,15 +361,25 @@ export default function Settings() {
               />
             </div>
           </div>
-        </Card>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
 
         {/* Categories Management */}
-        <Card className="p-4">
-          <div className="mb-4">
-            <h3 className="font-semibold text-foreground">{t.settings.categories}</h3>
-            <p className="text-sm text-muted-foreground">{t.settings.categoriesDescription}</p>
-          </div>
-          <div className="space-y-2 mb-4">
+        <Collapsible open={openCategories} onOpenChange={setOpenCategories}>
+          <Card className="p-4">
+            <CollapsibleTrigger asChild>
+              <button className="w-full flex items-center justify-between cursor-pointer hover:opacity-70 transition-opacity mb-4">
+                <div className="text-left">
+                  <h3 className="font-semibold text-foreground">{t.settings.categories}</h3>
+                  <p className="text-sm text-muted-foreground">{t.settings.categoriesDescription}</p>
+                </div>
+                <ChevronDown className={`w-5 h-5 transition-transform flex-shrink-0 ml-2 ${openCategories ? 'rotate-180' : ''}`} />
+              </button>
+            </CollapsibleTrigger>
+
+            <CollapsibleContent>
+              <div className="space-y-2 mb-4">
             {categories.map((cat, idx) => (
               <div key={idx} className="flex items-center gap-2">
                 <Badge variant="secondary" className="flex-1">{cat}</Badge>
@@ -373,12 +411,22 @@ export default function Settings() {
             <Plus className="w-4 h-4 mr-2" />
             {t.settings.addCategory}
           </Button>
-        </Card>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
 
         {/* Water Settings */}
-        <Card className="p-4">
-          <h3 className="font-semibold text-foreground mb-4">{t.settings.hydrationSettings}</h3>
-          <div className="space-y-4">
+        <Collapsible open={openWater} onOpenChange={setOpenWater}>
+          <Card className="p-4">
+            <CollapsibleTrigger asChild>
+              <button className="w-full flex items-center justify-between cursor-pointer hover:opacity-70 transition-opacity mb-4">
+                <h3 className="font-semibold text-foreground">{t.settings.hydrationSettings}</h3>
+                <ChevronDown className={`w-5 h-5 transition-transform ${openWater ? 'rotate-180' : ''}`} />
+              </button>
+            </CollapsibleTrigger>
+
+            <CollapsibleContent>
+              <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="water-target">{t.settings.dailyTarget}</Label>
               <Input
@@ -401,12 +449,22 @@ export default function Settings() {
               />
             </div>
           </div>
-        </Card>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
 
         {/* Reminder Settings */}
-        <Card className="p-4">
-          <h3 className="font-semibold text-foreground mb-4">{t.settings.waterReminders}</h3>
-          <div className="space-y-4">
+        <Collapsible open={openReminders} onOpenChange={setOpenReminders}>
+          <Card className="p-4">
+            <CollapsibleTrigger asChild>
+              <button className="w-full flex items-center justify-between cursor-pointer hover:opacity-70 transition-opacity mb-4">
+                <h3 className="font-semibold text-foreground">{t.settings.waterReminders}</h3>
+                <ChevronDown className={`w-5 h-5 transition-transform ${openReminders ? 'rotate-180' : ''}`} />
+              </button>
+            </CollapsibleTrigger>
+
+            <CollapsibleContent>
+              <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <Label htmlFor="reminder-enabled">{t.settings.enableReminders}</Label>
@@ -465,7 +523,9 @@ export default function Settings() {
               </>
             )}
           </div>
-        </Card>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
 
         {/* Data Management */}
         <Collapsible open={openDataSection} onOpenChange={setOpenDataSection}>
