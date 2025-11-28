@@ -161,7 +161,7 @@ export default function EditFoodDialog({
               className="w-full"
             />
             <p className="text-xs text-muted-foreground">
-              I nutrienti visualizzati sono calcolati per {currentGrams}g (base: 100g)
+              I nutrienti visualizzati sono calcolati per {currentGrams}g
             </p>
           </div>
 
