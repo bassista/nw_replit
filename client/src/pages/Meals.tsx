@@ -42,7 +42,7 @@ export default function Meals() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
   const [showCalendar, setShowCalendar] = useState(true);
-  const [mealToEdit, setMealToEdit] = useState<Meal | null>(null);
+  const [mealToEdit, setMealToEdit] = useState<Meal | undefined>(undefined);
   const [mealToAssignToDay, setMealToAssignToDay] = useState<Meal | null>(null);
   const [showDaySelector, setShowDaySelector] = useState(false);
   const [currentWeekStart, setCurrentWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 0 }));
@@ -63,7 +63,7 @@ export default function Meals() {
       const updatedMeals = meals.map(m => m.id === newMeal.id ? calculatedMeal : m);
       setMeals(updatedMeals);
       saveMeals(updatedMeals);
-      setMealToEdit(null);
+      setMealToEdit(undefined);
     } else {
       // Add new meal
       const updatedMeals = [...meals, calculatedMeal];
@@ -238,7 +238,7 @@ export default function Meals() {
         open={dialogOpen}
         onClose={() => {
           setDialogOpen(false);
-          setMealToEdit(null);
+          setMealToEdit(undefined);
         }}
         initialMeal={mealToEdit}
         foods={foods}
