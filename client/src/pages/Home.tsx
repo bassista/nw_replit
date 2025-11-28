@@ -56,9 +56,6 @@ export default function Home() {
   const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [foodDialogTab, setFoodDialogTab] = useState<"all" | "favorites">("all");
-  const [displayedFoodsPage, setDisplayedFoodsPage] = useState(1);
-  const sentinelRef = useRef<HTMLDivElement>(null);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const { t } = useLanguage();
 
   const dateKey = format(currentDate, 'yyyy-MM-dd');
@@ -315,62 +312,6 @@ export default function Home() {
     const matchesFavorites = foodDialogTab === "all" || (foodDialogTab === "favorites" && food.isFavorite);
     return matchesSearch && matchesCategory && matchesFavorites;
   });
-
-  const displayedFoods = filteredFoods.slice(0, displayedFoodsPage * 10);
-  const hasMoreFoods = filteredFoods.length > displayedFoodsPage * 10;
-
-  // Reset page when filters change
-  useEffect(() => {
-    setDisplayedFoodsPage(1);
-  }, [searchQuery, selectedCategory, foodDialogTab]);
-
-  // Infinite scroll observer
-  useEffect(() => {
-    if (!sentinelRef.current || !scrollContainerRef.current) return;
-
-    const container = scrollContainerRef.current;
-    
-    // Delay to ensure DOM is fully rendered and container has proper dimensions
-    const timeoutId = setTimeout(() => {
-      if (!sentinelRef.current || !container) return;
-
-      // Check if container is actually scrollable
-      if (container.scrollHeight <= container.clientHeight) {
-        // Container is not scrollable yet, retry
-        setTimeout(() => {
-          if (!sentinelRef.current || !container) return;
-          setupObserver();
-        }, 100);
-        return;
-      }
-
-      setupObserver();
-    }, 50);
-
-    function setupObserver() {
-      if (!sentinelRef.current || !container) return;
-
-      const observer = new IntersectionObserver(
-        entries => {
-          if (entries[0].isIntersecting && hasMoreFoods) {
-            setDisplayedFoodsPage(prev => prev + 1);
-          }
-        },
-        { 
-          root: container,
-          threshold: 0.1 
-        }
-      );
-
-      observer.observe(sentinelRef.current);
-
-      return () => {
-        observer.disconnect();
-      };
-    }
-
-    return () => clearTimeout(timeoutId);
-  }, [hasMoreFoods, showAddFoodDialog, displayedFoods.length]);
 
   // Calculate nutrients from daily meal
   const calculateNutrients = () => {
@@ -662,7 +603,6 @@ export default function Home() {
           setSelectedCategory('all');
           setFoodDialogTab("all");
           setSearchQuery('');
-          setDisplayedFoodsPage(1);
         }
       }}>
         <DialogContent className="flex flex-col max-h-[80vh]">
@@ -710,31 +650,26 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="space-y-2 flex-1 overflow-y-auto min-h-0" ref={scrollContainerRef}>
-              {displayedFoods.length > 0 ? (
-                <>
-                  {displayedFoods.map(food => (
-                    <button
-                      key={food.id}
-                      onClick={() => handleSelectFood(food)}
-                      className="w-full text-left p-3 rounded-md border border-card-border hover-elevate"
-                      data-testid={`food-option-${food.id}`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium text-foreground">{food.name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {food.category} • {food.calories} kcal (per 100g)
-                          </p>
-                        </div>
-                        <Plus className="w-4 h-4 text-primary" />
+            <div className="space-y-2 flex-1 overflow-y-auto min-h-0">
+              {filteredFoods.length > 0 ? (
+                filteredFoods.map(food => (
+                  <button
+                    key={food.id}
+                    onClick={() => handleSelectFood(food)}
+                    className="w-full text-left p-3 rounded-md border border-card-border hover-elevate"
+                    data-testid={`food-option-${food.id}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-foreground">{food.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {food.category} • {food.calories} kcal (per 100g)
+                        </p>
                       </div>
-                    </button>
-                  ))}
-                  {hasMoreFoods && (
-                    <div ref={sentinelRef} className="h-4" data-testid="sentinel-load-more-foods" />
-                  )}
-                </>
+                      <Plus className="w-4 h-4 text-primary" />
+                    </div>
+                  </button>
+                ))
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
                   {t.foods.noFoodsFound}
