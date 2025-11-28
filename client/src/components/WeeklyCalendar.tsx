@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format, startOfWeek, addDays } from "date-fns";
 import { it } from "date-fns/locale";
+import { useState, useRef } from "react";
 
 interface WeeklyCalendarProps {
   weekStart: Date;
@@ -19,6 +20,9 @@ interface WeeklyCalendarProps {
 const dayNames = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
 
 export default function WeeklyCalendar({ weekStart, assignments, onDayClick, onRemoveMeal, onDropMeal, draggedMealId }: WeeklyCalendarProps) {
+  const [touchData, setTouchData] = useState<{ mealId?: string; mealName?: string } | null>(null);
+  const touchStartRef = useRef<HTMLElement | null>(null);
+
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.currentTarget.classList.add('bg-primary/20');
@@ -36,6 +40,30 @@ export default function WeeklyCalendar({ weekStart, assignments, onDayClick, onR
     if (mealId && mealName && onDropMeal) {
       onDropMeal(dayOfWeek, mealId, mealName);
     }
+  };
+
+  const handleTouchStart = (e: React.TouchEvent, dayElement: HTMLElement) => {
+    const mealId = e.currentTarget.getAttribute('data-meal-id');
+    const mealName = e.currentTarget.getAttribute('data-meal-name');
+    if (mealId) {
+      setTouchData({ mealId, mealName: mealName || undefined });
+      touchStartRef.current = dayElement;
+      dayElement.classList.add('bg-primary/20');
+    }
+  };
+
+  const handleTouchEnd = (dayOfWeek: number, e: React.TouchEvent) => {
+    if (touchData?.mealId && onDropMeal) {
+      const touch = e.changedTouches[0];
+      const element = document.elementFromPoint(touch.clientX, touch.clientY);
+      if (element?.getAttribute('data-day-index') !== null) {
+        onDropMeal(dayOfWeek, touchData.mealId, touchData.mealName || '');
+      }
+    }
+    if (touchStartRef.current) {
+      touchStartRef.current.classList.remove('bg-primary/20');
+    }
+    setTouchData(null);
   };
   const days = Array.from({ length: 7 }, (_, i) => {
     const date = addDays(startOfWeek(weekStart, { weekStartsOn: 0 }), i);
@@ -60,6 +88,7 @@ export default function WeeklyCalendar({ weekStart, assignments, onDayClick, onR
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={(e) => handleDrop(day.dayOfWeek, e)}
+            data-day-index={day.dayOfWeek}
           >
             <button
               onClick={() => onDayClick(day.dayOfWeek)}
@@ -69,6 +98,10 @@ export default function WeeklyCalendar({ weekStart, assignments, onDayClick, onR
                   : 'bg-muted border-2 border-dashed border-muted-foreground/30'
               }`}
               data-testid={`calendar-day-${day.dayOfWeek}`}
+              data-meal-id={day.assignment?.mealId}
+              data-meal-name={day.assignment?.mealName}
+              onTouchStart={(e) => handleTouchStart(e, e.currentTarget)}
+              onTouchEnd={(e) => handleTouchEnd(day.dayOfWeek, e)}
             >
               <div className="text-xs font-medium text-muted-foreground mb-1">
                 {day.dayName}
