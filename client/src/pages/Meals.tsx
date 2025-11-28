@@ -21,13 +21,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Heart, ShoppingCart, Trash2, Search, ChevronLeft, ChevronRight, Calendar, X } from "lucide-react";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, Heart, Trash2, Search, ChevronLeft, ChevronRight, Calendar, X } from "lucide-react";
 import { useState, useEffect } from "react";
-import { Link } from "wouter";
 import { addDays, subDays, startOfWeek, format, isSameWeek } from "date-fns";
 import { it } from "date-fns/locale";
-import { loadFoods, loadMeals, saveMeals, loadWeeklyAssignments, assignMealToDay, removeMealFromDay, calculateMealNutrition, saveShoppingLists, loadShoppingLists, saveDailyMeal, getDailyMeal } from "@/lib/storage";
+import { loadFoods, loadMeals, saveMeals, loadWeeklyAssignments, assignMealToDay, removeMealFromDay, calculateMealNutrition, saveDailyMeal, getDailyMeal } from "@/lib/storage";
 import { useToast } from "@/hooks/use-toast";
 import type { Meal, DailyMealItem } from "@/lib/storage";
 import type { FoodItem } from "@shared/schema";
@@ -47,7 +45,6 @@ export default function Meals() {
   const [mealToAssignToDay, setMealToAssignToDay] = useState<Meal | null>(null);
   const [showDaySelector, setShowDaySelector] = useState(false);
   const [currentWeekStart, setCurrentWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 0 }));
-  const [shoppingLists, setShoppingLists] = useState<any[]>([]);
   const [showSelectMealForDay, setShowSelectMealForDay] = useState(false);
   const [selectedDayForMealSelection, setSelectedDayForMealSelection] = useState<number | null>(null);
   const [mealSearchQuery, setMealSearchQuery] = useState('');
@@ -60,7 +57,6 @@ export default function Meals() {
     setFoods(loadedFoods);
     setMeals(loadedMeals.map(m => calculateMealNutrition(m, loadedFoods)));
     setAssignments(loadWeeklyAssignments());
-    setShoppingLists(loadShoppingLists());
   }, []);
 
   const handleSaveMeal = (newMeal: Meal) => {
@@ -113,29 +109,6 @@ export default function Meals() {
     setAssignments(loadWeeklyAssignments());
   };
 
-  const handleAddToShoppingList = (mealId: string) => {
-    const meal = meals.find(m => m.id === mealId);
-    if (meal && meal.ingredients) {
-      const newShoppingList = {
-        id: Date.now().toString(),
-        name: `${meal.name} - ${format(new Date(), 'd MMM yyyy', { locale: it })}`,
-        items: meal.ingredients.map((ing: any) => ({
-          id: Date.now().toString() + Math.random(),
-          name: ing.name,
-          quantity: ing.quantity,
-          unit: ing.unit,
-          checked: false,
-        })),
-      };
-      const updatedLists = [...shoppingLists, newShoppingList];
-      setShoppingLists(updatedLists);
-      saveShoppingLists(updatedLists);
-      toast({
-        title: 'Aggiunto',
-        description: `Ingredienti di "${meal.name}" aggiunti alla lista spesa`,
-      });
-    }
-  };
 
   const handleAddToCalendar = (mealId: string) => {
     const meal = meals.find(m => m.id === mealId);
@@ -177,53 +150,6 @@ export default function Meals() {
     }
   };
 
-  const handleAddWeeklyShoppingList = () => {
-    // Collect all unique ingredients from weekly meals
-    const ingredientMap = new Map<string, any>(); // key is foodId
-
-    assignments.forEach(assignment => {
-      if (assignment.mealId) {
-        const meal = meals.find(m => m.id === assignment.mealId);
-        if (meal && meal.ingredients) {
-          meal.ingredients.forEach((ing: any) => {
-            if (!ingredientMap.has(ing.foodId)) {
-              ingredientMap.set(ing.foodId, {
-                id: Date.now().toString() + Math.random(),
-                name: ing.name,
-                quantity: ing.quantity,
-                unit: ing.unit,
-                checked: false,
-              });
-            }
-          });
-        }
-      }
-    });
-
-    if (ingredientMap.size === 0) {
-      toast({
-        title: 'Nessun pasto assegnato',
-        description: 'Assegna almeno un pasto a un giorno della settimana',
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const newShoppingList = {
-      id: Date.now().toString(),
-      name: `Settimana ${format(currentWeekStart, 'd MMM', { locale: it })} - ${format(addDays(currentWeekStart, 6), 'd MMM yyyy', { locale: it })}`,
-      items: Array.from(ingredientMap.values()),
-    };
-
-    const updatedLists = [...shoppingLists, newShoppingList];
-    setShoppingLists(updatedLists);
-    saveShoppingLists(updatedLists);
-
-    toast({
-      title: 'Lista spesa creata',
-      description: `${ingredientMap.size} ingredienti unici aggiunti alla lista spesa`,
-    });
-  };
 
   // Filter meals by search and favorites (for main list)
   const filteredMeals = meals.filter(meal => {
@@ -259,26 +185,14 @@ export default function Meals() {
         </Button>
 
         {/* Navigation Buttons */}
-        <div className="grid grid-cols-2 gap-3">
-          <Button
-            variant="outline"
-            className="w-full"
-            data-testid="button-add-weekly-shopping-list"
-            onClick={handleAddWeeklyShoppingList}
-          >
-            <ShoppingCart className="w-4 h-4 mr-2" />
-            Crea Lista Spesa
-          </Button>
-
-          <Button
-            variant="outline"
-            className="w-full"
-            data-testid="button-toggle-calendar"
-            onClick={() => setShowCalendar(!showCalendar)}
-          >
-            {showCalendar ? '📅 Nascondi' : '📋 Mostra'}
-          </Button>
-        </div>
+        <Button
+          variant="outline"
+          className="w-full"
+          data-testid="button-toggle-calendar"
+          onClick={() => setShowCalendar(!showCalendar)}
+        >
+          {showCalendar ? '📅 Nascondi' : '📋 Mostra'}
+        </Button>
 
         {/* Week Navigation */}
         {showCalendar && (
@@ -360,7 +274,6 @@ export default function Meals() {
                 }}
                 onDelete={() => setMealToDelete(meal.id)}
                 onToggleFavorite={() => handleToggleFavorite(meal.id)}
-                onAddToShoppingList={() => handleAddToShoppingList(meal.id)}
                 onAddToCalendar={() => handleAddToCalendar(meal.id)}
                 onAddMealToDiary={() => handleAddMealToDiary(meal.id)}
               />
