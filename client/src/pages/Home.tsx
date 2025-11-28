@@ -58,6 +58,7 @@ export default function Home() {
   const [foodDialogTab, setFoodDialogTab] = useState<"all" | "favorites">("all");
   const [displayedFoodsPage, setDisplayedFoodsPage] = useState(1);
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const { t } = useLanguage();
 
   const dateKey = format(currentDate, 'yyyy-MM-dd');
@@ -325,13 +326,19 @@ export default function Home() {
 
   // Infinite scroll observer
   useEffect(() => {
-    if (!sentinelRef.current) return;
+    if (!sentinelRef.current || !scrollContainerRef.current) return;
 
-    const observer = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && hasMoreFoods) {
-        setDisplayedFoodsPage(prev => prev + 1);
+    const observer = new IntersectionObserver(
+      entries => {
+        if (entries[0].isIntersecting && hasMoreFoods) {
+          setDisplayedFoodsPage(prev => prev + 1);
+        }
+      },
+      { 
+        root: scrollContainerRef.current,
+        threshold: 0.1 
       }
-    }, { threshold: 0.1 });
+    );
 
     observer.observe(sentinelRef.current);
     return () => observer.disconnect();
@@ -675,7 +682,7 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="space-y-2 max-h-96 overflow-y-auto">
+            <div className="space-y-2 max-h-96 overflow-y-auto" ref={scrollContainerRef}>
               {displayedFoods.length > 0 ? (
                 <>
                   {displayedFoods.map(food => (
