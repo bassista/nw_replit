@@ -71,7 +71,9 @@ export default function EditFoodDialog({
     setCurrentGrams(gramsClamped);
     
     if (baseFood) {
-      const multiplier = gramsClamped / 100;
+      // Usa il gramsPerServing salvato come base per il calcolo del moltiplicatore
+      const baseGrams = baseFood.gramsPerServing || 100;
+      const multiplier = gramsClamped / baseGrams;
       setFormData({
         ...baseFood,
         calories: Math.max(0, Math.round(baseFood.calories * multiplier)),
