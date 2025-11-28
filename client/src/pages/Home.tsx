@@ -20,6 +20,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, ChevronLeft, ChevronRight, Plus, Trash2, Search, Edit, Beef, Wheat, Droplets, Flame, Copy } from "lucide-react";
 import { useState, useEffect } from "react";
 import { format, addDays, subDays } from "date-fns";
@@ -54,7 +55,7 @@ export default function Home() {
   const [showClearDayConfirm, setShowClearDayConfirm] = useState(false);
   const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [foodDialogTab, setFoodDialogTab] = useState<"all" | "favorites">("all");
   const { t } = useLanguage();
 
   const dateKey = format(currentDate, 'yyyy-MM-dd');
@@ -308,7 +309,7 @@ export default function Home() {
   const filteredFoods = availableFoods.filter(food => {
     const matchesSearch = food.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || food.category === selectedCategory;
-    const matchesFavorites = !showFavoritesOnly || food.isFavorite;
+    const matchesFavorites = foodDialogTab === "all" || (foodDialogTab === "favorites" && food.isFavorite);
     return matchesSearch && matchesCategory && matchesFavorites;
   });
 
@@ -600,7 +601,7 @@ export default function Home() {
         setShowAddFoodDialog(open);
         if (!open) {
           setSelectedCategory('all');
-          setShowFavoritesOnly(false);
+          setFoodDialogTab("all");
           setSearchQuery('');
         }
       }}>
@@ -621,6 +622,17 @@ export default function Home() {
               />
             </div>
 
+            <Tabs value={foodDialogTab} onValueChange={(value) => setFoodDialogTab(value as "all" | "favorites")} className="w-full">
+              <TabsList className="w-full">
+                <TabsTrigger value="all" className="flex-1" data-testid="tab-all-foods">
+                  Tutti
+                </TabsTrigger>
+                <TabsTrigger value="favorites" className="flex-1" data-testid="tab-favorite-foods">
+                  Preferiti
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+
             <div className="space-y-3 border rounded-lg p-3 bg-muted/20">
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Categoria</Label>
@@ -635,20 +647,6 @@ export default function Home() {
                     <option key={cat} value={cat}>{cat}</option>
                   ))}
                 </select>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="favorites-filter"
-                  checked={showFavoritesOnly}
-                  onChange={(e) => setShowFavoritesOnly(e.target.checked)}
-                  className="rounded border-input"
-                  data-testid="checkbox-favorites-filter"
-                />
-                <Label htmlFor="favorites-filter" className="text-sm font-medium cursor-pointer">
-                  Solo preferiti
-                </Label>
               </div>
             </div>
 
