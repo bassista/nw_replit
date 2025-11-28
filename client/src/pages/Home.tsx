@@ -171,10 +171,13 @@ export default function Home() {
       return;
     }
 
+    // Load fresh foods from storage to ensure we have the latest data
+    const foods = loadFoods();
+
     // Accumulate all ingredients from the meal
     const newItems: DailyMealItem[] = [];
     meal.ingredients.forEach(ing => {
-      const food = availableFoods.find(f => f.id === ing.foodId);
+      const food = foods.find(f => f.id === ing.foodId);
       if (food) {
         const newItem: DailyMealItem = {
           id: Date.now().toString() + Math.random(),
@@ -190,6 +193,16 @@ export default function Home() {
       }
     });
 
+    // Only proceed if we found some items
+    if (newItems.length === 0) {
+      toast({
+        title: "Errore",
+        description: "Non è stato possibile trovare gli ingredienti del pasto.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Add all items at once and save immediately
     const updatedItems = [...dailyMealItems, ...newItems];
     setDailyMealItems(updatedItems);
@@ -197,7 +210,7 @@ export default function Home() {
 
     toast({
       title: "Pasto copiato",
-      description: `"${meal.name}" con ${meal.ingredients.length} ${meal.ingredients.length === 1 ? 'ingrediente' : 'ingredienti'} aggiunto al diario.`,
+      description: `"${meal.name}" con ${newItems.length} ${newItems.length === 1 ? 'ingrediente' : 'ingredienti'} aggiunto al diario.`,
     });
 
     setShowSelectMealDialog(false);
