@@ -328,9 +328,27 @@ export default function Home() {
   useEffect(() => {
     if (!sentinelRef.current || !scrollContainerRef.current) return;
 
-    // Delay to ensure DOM is fully rendered
+    const container = scrollContainerRef.current;
+    
+    // Delay to ensure DOM is fully rendered and container has proper dimensions
     const timeoutId = setTimeout(() => {
-      if (!sentinelRef.current || !scrollContainerRef.current) return;
+      if (!sentinelRef.current || !container) return;
+
+      // Check if container is actually scrollable
+      if (container.scrollHeight <= container.clientHeight) {
+        // Container is not scrollable yet, retry
+        setTimeout(() => {
+          if (!sentinelRef.current || !container) return;
+          setupObserver();
+        }, 100);
+        return;
+      }
+
+      setupObserver();
+    }, 50);
+
+    function setupObserver() {
+      if (!sentinelRef.current || !container) return;
 
       const observer = new IntersectionObserver(
         entries => {
@@ -339,7 +357,7 @@ export default function Home() {
           }
         },
         { 
-          root: scrollContainerRef.current,
+          root: container,
           threshold: 0.1 
         }
       );
@@ -349,10 +367,10 @@ export default function Home() {
       return () => {
         observer.disconnect();
       };
-    }, 50);
+    }
 
     return () => clearTimeout(timeoutId);
-  }, [hasMoreFoods, showAddFoodDialog]);
+  }, [hasMoreFoods, showAddFoodDialog, displayedFoods.length]);
 
   // Calculate nutrients from daily meal
   const calculateNutrients = () => {
