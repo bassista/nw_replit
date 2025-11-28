@@ -56,12 +56,12 @@ export default function Foods() {
     if (loadedFoods.length === 0) {
       // Initialize with default foods if empty
       const defaultFoods: FoodItem[] = [
-        { id: '1', name: 'Petto di Pollo', category: 'Proteine', calories: 165, protein: 31, carbs: 0, fat: 3.6, fiber: 0, isFavorite: true },
-        { id: '2', name: 'Riso Integrale', category: 'Carboidrati', calories: 216, protein: 5, carbs: 45, fat: 1.8, fiber: 3.5, isFavorite: false },
-        { id: '3', name: 'Broccoli', category: 'Verdure', calories: 55, protein: 3.7, carbs: 11, fat: 0.6, fiber: 2.6, isFavorite: true },
-        { id: '4', name: 'Salmone', category: 'Proteine', calories: 206, protein: 22, carbs: 0, fat: 13, fiber: 0, isFavorite: false },
-        { id: '5', name: 'Avocado', category: 'Frutta', calories: 160, protein: 2, carbs: 8.5, fat: 14.7, fiber: 6.7, isFavorite: true },
-        { id: '6', name: 'Uova', category: 'Proteine', calories: 155, protein: 13, carbs: 1.1, fat: 11, fiber: 0, isFavorite: false },
+        { id: '1', name: 'Petto di Pollo', category: 'Proteine', calories: 165, protein: 31, carbs: 0, fat: 3.6, fiber: 0, isFavorite: true, gramsPerServing: 100 },
+        { id: '2', name: 'Riso Integrale', category: 'Carboidrati', calories: 216, protein: 5, carbs: 45, fat: 1.8, fiber: 3.5, isFavorite: false, gramsPerServing: 100 },
+        { id: '3', name: 'Broccoli', category: 'Verdure', calories: 55, protein: 3.7, carbs: 11, fat: 0.6, fiber: 2.6, isFavorite: true, gramsPerServing: 100 },
+        { id: '4', name: 'Salmone', category: 'Proteine', calories: 206, protein: 22, carbs: 0, fat: 13, fiber: 0, isFavorite: false, gramsPerServing: 100 },
+        { id: '5', name: 'Avocado', category: 'Frutta', calories: 160, protein: 2, carbs: 8.5, fat: 14.7, fiber: 6.7, isFavorite: true, gramsPerServing: 100 },
+        { id: '6', name: 'Uova', category: 'Proteine', calories: 155, protein: 13, carbs: 1.1, fat: 11, fiber: 0, isFavorite: false, gramsPerServing: 100 },
       ];
       saveFoods(defaultFoods);
       setFoods(defaultFoods);
@@ -170,6 +170,7 @@ export default function Foods() {
       fat: 0,
       fiber: 0,
       isFavorite: false,
+      gramsPerServing: 100,
     };
     setEditingFood(newFood);
     setDialogOpen(true);
@@ -237,6 +238,7 @@ export default function Foods() {
         fat: Math.round((nutrients['fat_100g'] || 0) * 10) / 10,
         fiber: Math.round((nutrients['fiber_100g'] || 0) * 10) / 10,
         isFavorite: false,
+        gramsPerServing: 100,
       };
 
       setFoods(prev => [...prev, newFood]);
@@ -297,7 +299,7 @@ export default function Foods() {
     const food = foods.find(f => f.id === foodId);
     if (food) {
       setSelectedFoodForDiary(food);
-      setDiaryGrams("100");
+      setDiaryGrams(String(food.gramsPerServing || 100));
       setDiaryDialogOpen(true);
     }
   };
@@ -323,7 +325,8 @@ export default function Foods() {
     }
 
     // Calcola i nutrienti per la quantità specificata
-    const multiplier = grams / 100;
+    const baseGrams = selectedFoodForDiary.gramsPerServing || 100;
+    const multiplier = grams / baseGrams;
     const today = new Date().toISOString().split('T')[0];
     const dailyItems = getDailyMeal(today);
 
@@ -508,11 +511,11 @@ export default function Foods() {
               <div className="bg-muted p-3 rounded-lg space-y-1">
                 <p className="text-xs text-muted-foreground">Valori per {diaryGrams}g:</p>
                 <div className="text-sm font-medium">
-                  <p>{Math.round(selectedFoodForDiary.calories * parseInt(diaryGrams) / 100)} kcal</p>
+                  <p>{Math.round(selectedFoodForDiary.calories * parseInt(diaryGrams) / (selectedFoodForDiary.gramsPerServing || 100))} kcal</p>
                   <p className="text-xs text-muted-foreground">
-                    P: {Math.round(selectedFoodForDiary.protein * parseInt(diaryGrams) / 100 * 10) / 10}g | 
-                    C: {Math.round(selectedFoodForDiary.carbs * parseInt(diaryGrams) / 100 * 10) / 10}g | 
-                    G: {Math.round(selectedFoodForDiary.fat * parseInt(diaryGrams) / 100 * 10) / 10}g
+                    P: {Math.round(selectedFoodForDiary.protein * parseInt(diaryGrams) / (selectedFoodForDiary.gramsPerServing || 100) * 10) / 10}g | 
+                    C: {Math.round(selectedFoodForDiary.carbs * parseInt(diaryGrams) / (selectedFoodForDiary.gramsPerServing || 100) * 10) / 10}g | 
+                    G: {Math.round(selectedFoodForDiary.fat * parseInt(diaryGrams) / (selectedFoodForDiary.gramsPerServing || 100) * 10) / 10}g
                   </p>
                 </div>
               </div>
