@@ -328,7 +328,7 @@ export default function Home() {
   useEffect(() => {
     if (!sentinelRef.current || !scrollContainerRef.current) return;
 
-    // Small delay to ensure DOM is ready
+    // Delay to ensure DOM is fully rendered
     const timeoutId = setTimeout(() => {
       if (!sentinelRef.current || !scrollContainerRef.current) return;
 
@@ -349,7 +349,7 @@ export default function Home() {
       return () => {
         observer.disconnect();
       };
-    }, 0);
+    }, 50);
 
     return () => clearTimeout(timeoutId);
   }, [hasMoreFoods, showAddFoodDialog]);
