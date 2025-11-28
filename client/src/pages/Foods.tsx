@@ -105,7 +105,13 @@ export default function Foods() {
         if (element) {
           const scanner = new Html5QrcodeScanner(
             "qr-reader",
-            { fps: 10, qrbox: { width: 250, height: 250 } },
+            { 
+              fps: 10, 
+              qrbox: { width: 250, height: 250 },
+              facingMode: "environment",
+              showTorchButtonIfSupported: true,
+              disableFlip: false,
+            } as any,
             false
           );
 
