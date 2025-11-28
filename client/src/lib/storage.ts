@@ -42,6 +42,8 @@ export function loadFoods(): FoodItem[] {
 // Daily Meals Storage
 export function saveDailyMeals(meals: DailyMeal[]) {
   useAppStore.setState({ dailyMeals: meals });
+  // Save to localStorage immediately
+  useAppStore.getState().saveState();
 }
 
 export function loadDailyMeals(): DailyMeal[] {
