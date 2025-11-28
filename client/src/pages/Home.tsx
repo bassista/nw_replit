@@ -22,7 +22,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, ChevronLeft, ChevronRight, Plus, Trash2, Search, Edit, Beef, Wheat, Droplets, Flame, Copy } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { format, addDays, subDays } from "date-fns";
 import { it } from "date-fns/locale";
 import { useLanguage } from "@/lib/languageContext";
@@ -56,6 +56,8 @@ export default function Home() {
   const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [foodDialogTab, setFoodDialogTab] = useState<"all" | "favorites">("all");
+  const [displayedFoodsPage, setDisplayedFoodsPage] = useState(1);
+  const sentinelRef = useRef<HTMLDivElement>(null);
   const { t } = useLanguage();
 
   const dateKey = format(currentDate, 'yyyy-MM-dd');
@@ -312,6 +314,28 @@ export default function Home() {
     const matchesFavorites = foodDialogTab === "all" || (foodDialogTab === "favorites" && food.isFavorite);
     return matchesSearch && matchesCategory && matchesFavorites;
   });
+
+  const displayedFoods = filteredFoods.slice(0, displayedFoodsPage * 10);
+  const hasMoreFoods = filteredFoods.length > displayedFoodsPage * 10;
+
+  // Reset page when filters change
+  useEffect(() => {
+    setDisplayedFoodsPage(1);
+  }, [searchQuery, selectedCategory, foodDialogTab]);
+
+  // Infinite scroll observer
+  useEffect(() => {
+    if (!sentinelRef.current) return;
+
+    const observer = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMoreFoods) {
+        setDisplayedFoodsPage(prev => prev + 1);
+      }
+    }, { threshold: 0.1 });
+
+    observer.observe(sentinelRef.current);
+    return () => observer.disconnect();
+  }, [hasMoreFoods]);
 
   // Calculate nutrients from daily meal
   const calculateNutrients = () => {
@@ -603,6 +627,7 @@ export default function Home() {
           setSelectedCategory('all');
           setFoodDialogTab("all");
           setSearchQuery('');
+          setDisplayedFoodsPage(1);
         }
       }}>
         <DialogContent className="max-h-[80vh] overflow-y-auto">
@@ -651,25 +676,30 @@ export default function Home() {
             </div>
 
             <div className="space-y-2 max-h-96 overflow-y-auto">
-              {filteredFoods.length > 0 ? (
-                filteredFoods.map(food => (
-                  <button
-                    key={food.id}
-                    onClick={() => handleSelectFood(food)}
-                    className="w-full text-left p-3 rounded-md border border-card-border hover-elevate"
-                    data-testid={`food-option-${food.id}`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-foreground">{food.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {food.category} • {food.calories} kcal (per 100g)
-                        </p>
+              {displayedFoods.length > 0 ? (
+                <>
+                  {displayedFoods.map(food => (
+                    <button
+                      key={food.id}
+                      onClick={() => handleSelectFood(food)}
+                      className="w-full text-left p-3 rounded-md border border-card-border hover-elevate"
+                      data-testid={`food-option-${food.id}`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-foreground">{food.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {food.category} • {food.calories} kcal (per 100g)
+                          </p>
+                        </div>
+                        <Plus className="w-4 h-4 text-primary" />
                       </div>
-                      <Plus className="w-4 h-4 text-primary" />
-                    </div>
-                  </button>
-                ))
+                    </button>
+                  ))}
+                  {hasMoreFoods && (
+                    <div ref={sentinelRef} className="h-4" data-testid="sentinel-load-more-foods" />
+                  )}
+                </>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
                   {t.foods.noFoodsFound}
