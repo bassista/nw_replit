@@ -287,6 +287,10 @@ export default function Meals() {
               <MealCard
                 key={meal.id}
                 meal={meal}
+                onClick={() => {
+                  setMealToEdit(meal);
+                  setDialogOpen(true);
+                }}
                 onEdit={() => {
                   setMealToEdit(meal);
                   setDialogOpen(true);

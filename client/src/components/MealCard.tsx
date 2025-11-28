@@ -2,7 +2,6 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Heart, ShoppingCart, Calendar, Edit2, Trash2, Beef, Wheat, Droplets, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useDraggable } from "@dnd-kit/core";
 
 interface MealCardProps {
   meal: {
@@ -34,23 +33,11 @@ export default function MealCard({
   onDelete,
   onClick,
 }: MealCardProps) {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: `meal-${meal.id}`,
-    data: {
-      type: 'meal',
-      mealId: meal.id,
-      mealName: meal.name,
-    },
-  });
-
   return (
     <Card 
-      ref={setNodeRef}
-      className={`p-4 hover-elevate cursor-grab active:cursor-grabbing transition-opacity ${isDragging ? 'opacity-50' : 'opacity-100'}`}
+      className="p-4 hover-elevate cursor-pointer"
       onClick={() => onClick?.(meal.id)}
       data-testid={`card-meal-${meal.id}`}
-      {...listeners}
-      {...attributes}
     >
       <div className="space-y-3">
         <div className="flex items-start justify-between gap-3">
