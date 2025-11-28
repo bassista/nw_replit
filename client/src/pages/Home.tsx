@@ -637,12 +637,12 @@ export default function Home() {
           setDisplayedFoodsPage(1);
         }
       }}>
-        <DialogContent className="max-h-[80vh] overflow-y-auto">
+        <DialogContent className="flex flex-col max-h-[80vh]">
           <DialogHeader>
             <DialogTitle>{t.diary.addFood}</DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-4">
+          <div className="space-y-4 flex-1 overflow-hidden flex flex-col">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
@@ -665,7 +665,7 @@ export default function Home() {
               </TabsList>
             </Tabs>
 
-            <div className="space-y-3 border rounded-lg p-3 bg-muted/20">
+            <div className="space-y-3 border rounded-lg p-3 bg-muted/20 flex-shrink-0">
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Categoria</Label>
                 <select
@@ -682,7 +682,7 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="space-y-2 max-h-96 overflow-y-auto" ref={scrollContainerRef}>
+            <div className="space-y-2 flex-1 overflow-y-auto min-h-0" ref={scrollContainerRef}>
               {displayedFoods.length > 0 ? (
                 <>
                   {displayedFoods.map(food => (
