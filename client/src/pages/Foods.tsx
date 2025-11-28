@@ -175,6 +175,26 @@ export default function Foods() {
     setDialogOpen(true);
   };
 
+  const requestCameraPermission = async () => {
+    try {
+      // Request camera permission and find back-facing camera
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: { ideal: "environment" } } 
+      });
+      // Stop the stream immediately - we just needed permission
+      stream.getTracks().forEach(track => track.stop());
+      return true;
+    } catch (error) {
+      console.error("Camera permission denied:", error);
+      toast({
+        title: "Permesso Fotocamera",
+        description: "Permesso negato. Abilita l'accesso alla fotocamera nelle impostazioni.",
+        variant: "destructive"
+      });
+      return false;
+    }
+  };
+
   const searchProductByBarcode = async (code: string) => {
     setIsScanning(true);
     try {
@@ -245,9 +265,12 @@ export default function Foods() {
     }
   };
 
-  const handleStartCamera = () => {
-    setCameraActive(true);
-    // Lo scanner verrà inizializzato dal useEffect quando cameraActive diventa true
+  const handleStartCamera = async () => {
+    const granted = await requestCameraPermission();
+    if (granted) {
+      setCameraActive(true);
+      // Lo scanner verrà inizializzato dal useEffect quando cameraActive diventa true
+    }
   };
 
   const handleStopCamera = () => {
