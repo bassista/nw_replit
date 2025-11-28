@@ -30,6 +30,7 @@ import { loadFoods, loadMeals, saveMeals, loadWeeklyAssignments, assignMealToDay
 import { useToast } from "@/hooks/use-toast";
 import type { Meal, DailyMealItem } from "@/lib/storage";
 import type { FoodItem } from "@shared/schema";
+import { DndContext, DragEndEvent } from "@dnd-kit/core";
 
 export default function Meals() {
   const { toast } = useToast();
@@ -39,7 +40,6 @@ export default function Meals() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [mealToDelete, setMealToDelete] = useState<string | null>(null);
   const [selectedDayForMeal, setSelectedDayForMeal] = useState<number | null>(null);
-  const [draggedMealId, setDraggedMealId] = useState<string | undefined>();
   const [searchQuery, setSearchQuery] = useState('');
   const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
   const [showCalendar, setShowCalendar] = useState(true);
@@ -102,17 +102,22 @@ export default function Meals() {
     setAssignments(loadWeeklyAssignments());
   };
 
-  const handleMealDragStart = (mealId: string, mealName: string, e: React.DragEvent<HTMLDivElement>) => {
-    setDraggedMealId(mealId);
-    e.dataTransfer.setData('mealId', mealId);
-    e.dataTransfer.setData('mealName', mealName);
-    e.dataTransfer.effectAllowed = 'move';
-  };
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (!over || !active.data.current) return;
 
-  const handleDropOnCalendarDay = (dayOfWeek: number, mealId: string, mealName: string) => {
-    assignMealToDay(dayOfWeek, mealId, mealName);
-    setAssignments(loadWeeklyAssignments());
-    setDraggedMealId(undefined);
+    const activeData = active.data.current as any;
+    const overData = over.data.current as any;
+
+    if (activeData.type === 'meal' && overData?.type === 'day') {
+      assignMealToDay(overData.dayOfWeek, activeData.mealId, activeData.mealName);
+      setAssignments(loadWeeklyAssignments());
+      toast({
+        title: "Pasto assegnato",
+        description: `"${activeData.mealName}" assegnato al giorno ${['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'][overData.dayOfWeek]}`,
+      });
+    }
   };
 
   const handleAddMealToShoppingList = (meal: Meal) => {
@@ -303,14 +308,15 @@ export default function Meals() {
   });
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <TopBar 
-        title="Pasti"
-        showSearch={false}
-        showAdd={false}
-      />
+    <DndContext onDragEnd={handleDragEnd}>
+      <div className="min-h-screen bg-background pb-20">
+        <TopBar 
+          title="Pasti"
+          showSearch={false}
+          showAdd={false}
+        />
 
-      <div className="max-w-2xl mx-auto px-4 py-4 space-y-4">
+        <div className="max-w-2xl mx-auto px-4 py-4 space-y-4">
         {/* Create New Meal Button */}
         <Button
           className="w-full"
@@ -396,8 +402,7 @@ export default function Meals() {
               assignments={assignments}
               onDayClick={handleDayClick}
               onRemoveMeal={handleRemoveMealFromDay}
-              onDropMeal={handleDropOnCalendarDay}
-              draggedMealId={draggedMealId}
+              onDropMeal={handleDragEnd}
             />
 
             {/* Generate Shopping List Button */}
@@ -451,7 +456,6 @@ export default function Meals() {
               <MealCard 
                 key={meal.id}
                 meal={meal}
-                isDragging={draggedMealId === meal.id}
                 onToggleFavorite={handleToggleFavorite}
                 onAddToShoppingList={(id) => {
                   const selectedMeal = meals.find(m => m.id === id);
@@ -476,7 +480,6 @@ export default function Meals() {
                 }}
                 onDelete={(id) => setMealToDelete(id)}
                 onClick={(id) => console.log('View meal:', id)}
-                onDragStart={handleMealDragStart}
               />
             ))
           ) : meals.length === 0 ? (
@@ -605,6 +608,8 @@ export default function Meals() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+        </div>
+      </div>
+    </DndContext>
   );
 }
