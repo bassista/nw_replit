@@ -46,6 +46,7 @@ export default function Meals() {
   const [mealToAssignToDay, setMealToAssignToDay] = useState<Meal | null>(null);
   const [showDaySelector, setShowDaySelector] = useState(false);
   const [currentWeekStart, setCurrentWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 0 }));
+  const [shoppingLists, setShoppingLists] = useState<any[]>([]);
 
   useEffect(() => {
     const loadedFoods = loadFoods();
@@ -53,6 +54,7 @@ export default function Meals() {
     setFoods(loadedFoods);
     setMeals(loadedMeals.map(m => calculateMealNutrition(m, loadedFoods)));
     setAssignments(loadWeeklyAssignments());
+    setShoppingLists(loadShoppingLists());
   }, []);
 
   const handleSaveMeal = (newMeal: Meal) => {
@@ -99,6 +101,62 @@ export default function Meals() {
   const handleRemoveMealFromDay = (dayOfWeek: number) => {
     removeMealFromDay(dayOfWeek);
     setAssignments(loadWeeklyAssignments());
+  };
+
+  const handleAddToShoppingList = (mealId: string) => {
+    const meal = meals.find(m => m.id === mealId);
+    if (meal && meal.ingredients) {
+      const newShoppingList = {
+        id: Date.now().toString(),
+        name: `${meal.name} - ${format(new Date(), 'd MMM yyyy', { locale: it })}`,
+        items: meal.ingredients.map((ing: any) => ({
+          id: Date.now().toString() + Math.random(),
+          name: ing.name,
+          quantity: ing.quantity,
+          unit: ing.unit,
+          checked: false,
+        })),
+      };
+      const updatedLists = [...shoppingLists, newShoppingList];
+      setShoppingLists(updatedLists);
+      saveShoppingLists(updatedLists);
+      toast({
+        title: 'Aggiunto',
+        description: `Ingredienti di "${meal.name}" aggiunti alla lista spesa`,
+      });
+    }
+  };
+
+  const handleAddToCalendar = (mealId: string) => {
+    const meal = meals.find(m => m.id === mealId);
+    if (meal) {
+      setMealToAssignToDay(meal);
+      setShowDaySelector(true);
+    }
+  };
+
+  const handleAddMealToDiary = (mealId: string) => {
+    const meal = meals.find(m => m.id === mealId);
+    if (meal) {
+      const today = new Date();
+      const dateStr = format(today, 'yyyy-MM-dd');
+      const currentItems = getDailyMeal(dateStr);
+      const newItem: DailyMealItem = {
+        id: Date.now().toString(),
+        foodId: meal.id,
+        name: meal.name,
+        calories: meal.totalCalories,
+        protein: meal.totalProtein,
+        carbs: meal.totalCarbs,
+        fat: meal.totalFat,
+        grams: 0,
+      };
+      saveDailyMeal(dateStr, [...currentItems, newItem]);
+      toast({
+        title: 'Aggiunto',
+        description: `"${meal.name}" aggiunto al diario`,
+      });
+    }
   };
 
   // Filter meals by search and favorites
@@ -227,6 +285,9 @@ export default function Meals() {
                 }}
                 onDelete={() => setMealToDelete(meal.id)}
                 onToggleFavorite={() => handleToggleFavorite(meal.id)}
+                onAddToShoppingList={() => handleAddToShoppingList(meal.id)}
+                onAddToCalendar={() => handleAddToCalendar(meal.id)}
+                onAddMealToDiary={() => handleAddMealToDiary(meal.id)}
               />
             ))
           )}
