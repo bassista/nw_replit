@@ -8,6 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 import {
   Select,
   SelectContent,
@@ -52,13 +53,36 @@ export default function EditFoodDialog({
       isFavorite: false,
     }
   );
+  const [baseFood, setBaseFood] = useState<FoodItem | null>(null);
+  const [currentGrams, setCurrentGrams] = useState(100);
 
   // Update formData when food changes
   useEffect(() => {
     if (food) {
       setFormData(food);
+      setBaseFood(food);
+      setCurrentGrams(100);
     }
   }, [food, open]);
+
+  const handleGramsChange = (newGrams: number) => {
+    const gramsClamped = Math.max(0, newGrams);
+    setCurrentGrams(gramsClamped);
+    
+    if (baseFood) {
+      const multiplier = gramsClamped / 100;
+      setFormData({
+        ...baseFood,
+        calories: Math.max(0, Math.round(baseFood.calories * multiplier)),
+        protein: Math.max(0, Math.round(baseFood.protein * multiplier * 10) / 10),
+        carbs: Math.max(0, Math.round(baseFood.carbs * multiplier * 10) / 10),
+        fat: Math.max(0, Math.round(baseFood.fat * multiplier * 10) / 10),
+        fiber: Math.max(0, Math.round((baseFood.fiber || 0) * multiplier * 10) / 10),
+        sugar: Math.max(0, Math.round((baseFood.sugar || 0) * multiplier * 10) / 10),
+        sodium: Math.max(0, Math.round((baseFood.sodium || 0) * multiplier * 10) / 10),
+      });
+    }
+  };
 
   const handleSave = () => {
     onSave(formData);
@@ -88,6 +112,25 @@ export default function EditFoodDialog({
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               data-testid="input-food-name"
             />
+          </div>
+
+          <div className="space-y-3 border rounded-lg p-3 bg-muted/20">
+            <div className="flex items-center justify-between">
+              <Label>Quantità (g)</Label>
+              <span className="text-lg font-semibold" data-testid="display-current-grams">{currentGrams}g</span>
+            </div>
+            <Slider
+              value={[currentGrams]}
+              onValueChange={(value) => handleGramsChange(value[0])}
+              min={0}
+              max={1000}
+              step={1}
+              data-testid="slider-quantity"
+              className="w-full"
+            />
+            <p className="text-xs text-muted-foreground">
+              I nutrienti visualizzati sono calcolati per {currentGrams}g (base: 100g)
+            </p>
           </div>
 
           <div className="space-y-2">
