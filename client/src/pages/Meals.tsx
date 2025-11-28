@@ -141,20 +141,28 @@ export default function Meals() {
       const today = new Date();
       const dateStr = format(today, 'yyyy-MM-dd');
       const currentItems = getDailyMeal(dateStr);
-      const newItem: DailyMealItem = {
-        id: Date.now().toString(),
-        foodId: meal.id,
-        name: meal.name,
-        calories: meal.totalCalories,
-        protein: meal.totalProtein,
-        carbs: meal.totalCarbs,
-        fat: meal.totalFat,
-        grams: 0,
-      };
-      saveDailyMeal(dateStr, [...currentItems, newItem]);
+      
+      // Add each ingredient of the meal to the diary
+      const newItems: DailyMealItem[] = meal.ingredients.map(ing => {
+        const food = foods.find(f => f.id === ing.foodId);
+        const multiplier = ing.grams / 100;
+        
+        return {
+          id: Date.now().toString() + Math.random(),
+          foodId: ing.foodId,
+          name: food?.name || ing.name || 'Alimento',
+          calories: Math.round(food?.calories ? food.calories * multiplier : 0),
+          protein: Math.round((food?.protein ? food.protein * multiplier : 0) * 10) / 10,
+          carbs: Math.round((food?.carbs ? food.carbs * multiplier : 0) * 10) / 10,
+          fat: Math.round((food?.fat ? food.fat * multiplier : 0) * 10) / 10,
+          grams: ing.grams,
+        };
+      });
+      
+      saveDailyMeal(dateStr, [...currentItems, ...newItems]);
       toast({
         title: 'Aggiunto',
-        description: `"${meal.name}" aggiunto al diario`,
+        description: `${meal.ingredients.length} ingredienti di "${meal.name}" aggiunti al diario`,
       });
     }
   };
