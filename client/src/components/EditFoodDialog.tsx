@@ -117,7 +117,15 @@ export default function EditFoodDialog({
           <div className="space-y-3 border rounded-lg p-3 bg-muted/20">
             <div className="flex items-center justify-between">
               <Label>Quantità (g)</Label>
-              <span className="text-lg font-semibold" data-testid="display-current-grams">{currentGrams}g</span>
+              <Input
+                type="number"
+                min="0"
+                max="1000"
+                value={currentGrams}
+                onChange={(e) => handleGramsChange(Math.min(1000, Math.max(0, parseFloat(e.target.value) || 0)))}
+                className="w-20 h-9"
+                data-testid="input-quantity"
+              />
             </div>
             <Slider
               value={[currentGrams]}
