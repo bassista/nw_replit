@@ -18,7 +18,9 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Search, Heart, Plus, ChevronLeft, ChevronRight, Barcode, Loader, X } from "lucide-react";
+import { Search, Heart, Plus, ChevronLeft, ChevronRight, Barcode, Loader, X, ChevronUp, ChevronDown } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import { Label } from "@/components/ui/label";
 import { useState, useEffect, useRef } from "react";
 import type { FoodItem } from "@shared/schema";
 import { useLanguage } from "@/lib/languageContext";
@@ -44,7 +46,7 @@ export default function Foods() {
   const scannerRef = useRef<Html5QrcodeScanner | null>(null);
   const [diaryDialogOpen, setDiaryDialogOpen] = useState(false);
   const [selectedFoodForDiary, setSelectedFoodForDiary] = useState<FoodItem | null>(null);
-  const [diaryGrams, setDiaryGrams] = useState("100");
+  const [diaryGrams, setDiaryGrams] = useState(100);
   const { t } = useLanguage();
 
   // Load data on mount
@@ -299,22 +301,22 @@ export default function Foods() {
     const food = foods.find(f => f.id === foodId);
     if (food) {
       setSelectedFoodForDiary(food);
-      setDiaryGrams(String(food.gramsPerServing || 100));
+      setDiaryGrams(food.gramsPerServing || 100);
       setDiaryDialogOpen(true);
     }
   };
 
   const handleConfirmAddToDiary = () => {
-    if (!selectedFoodForDiary || !diaryGrams.trim()) {
+    if (!selectedFoodForDiary) {
       toast({
-        title: "Quantità mancante",
-        description: "Inserisci una quantità valida in grammi.",
+        title: "Errore",
+        description: "Seleziona un cibo.",
         variant: "destructive",
       });
       return;
     }
 
-    const grams = parseInt(diaryGrams);
+    const grams = diaryGrams;
     if (isNaN(grams) || grams <= 0) {
       toast({
         title: "Quantità non valida",
@@ -351,7 +353,7 @@ export default function Foods() {
 
     setDiaryDialogOpen(false);
     setSelectedFoodForDiary(null);
-    setDiaryGrams("100");
+    setDiaryGrams(100);
   };
 
   return (
@@ -494,28 +496,62 @@ export default function Foods() {
           </DialogHeader>
 
           <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Quantità (grammi)</label>
-              <Input
-                type="number"
-                min="1"
-                max="10000"
-                value={diaryGrams}
-                onChange={(e) => setDiaryGrams(e.target.value)}
-                data-testid="input-diary-grams"
-                autoFocus
+            <div className="space-y-3 border rounded-lg p-3 bg-muted/20">
+              <div className="flex items-center justify-between gap-2">
+                <Label>Quantità (g)</Label>
+                <div className="flex items-center gap-1">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7"
+                    onClick={() => setDiaryGrams(Math.max(1, diaryGrams - 5))}
+                    data-testid="button-decrease-diary-quantity"
+                  >
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="500"
+                    value={diaryGrams}
+                    onChange={(e) => setDiaryGrams(Math.min(500, Math.max(1, parseInt(e.target.value) || 1)))}
+                    className="w-20 h-9 text-center"
+                    data-testid="input-diary-grams"
+                  />
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7"
+                    onClick={() => setDiaryGrams(Math.min(500, diaryGrams + 5))}
+                    data-testid="button-increase-diary-quantity"
+                  >
+                    <ChevronUp className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              <Slider
+                value={[diaryGrams]}
+                onValueChange={(value) => setDiaryGrams(value[0])}
+                min={1}
+                max={500}
+                step={5}
+                data-testid="slider-diary-quantity"
+                className="w-full"
               />
+              <p className="text-xs text-muted-foreground">
+                I nutrienti sono calcolati per {diaryGrams}g
+              </p>
             </div>
             
             {selectedFoodForDiary && (
               <div className="bg-muted p-3 rounded-lg space-y-1">
                 <p className="text-xs text-muted-foreground">Valori per {diaryGrams}g:</p>
                 <div className="text-sm font-medium">
-                  <p>{Math.round(selectedFoodForDiary.calories * parseInt(diaryGrams) / (selectedFoodForDiary.gramsPerServing || 100))} kcal</p>
+                  <p>{Math.round(selectedFoodForDiary.calories * diaryGrams / (selectedFoodForDiary.gramsPerServing || 100))} kcal</p>
                   <p className="text-xs text-muted-foreground">
-                    P: {Math.round(selectedFoodForDiary.protein * parseInt(diaryGrams) / (selectedFoodForDiary.gramsPerServing || 100) * 10) / 10}g | 
-                    C: {Math.round(selectedFoodForDiary.carbs * parseInt(diaryGrams) / (selectedFoodForDiary.gramsPerServing || 100) * 10) / 10}g | 
-                    G: {Math.round(selectedFoodForDiary.fat * parseInt(diaryGrams) / (selectedFoodForDiary.gramsPerServing || 100) * 10) / 10}g
+                    P: {Math.round(selectedFoodForDiary.protein * diaryGrams / (selectedFoodForDiary.gramsPerServing || 100) * 10) / 10}g | 
+                    C: {Math.round(selectedFoodForDiary.carbs * diaryGrams / (selectedFoodForDiary.gramsPerServing || 100) * 10) / 10}g | 
+                    G: {Math.round(selectedFoodForDiary.fat * diaryGrams / (selectedFoodForDiary.gramsPerServing || 100) * 10) / 10}g
                   </p>
                 </div>
               </div>
