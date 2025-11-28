@@ -55,8 +55,16 @@ export default function Meals() {
     const loadedFoods = loadFoods();
     const loadedMeals = loadMeals();
     setFoods(loadedFoods);
-    setMeals(loadedMeals.map(m => calculateMealNutrition(m, loadedFoods)));
+    const calculatedMeals = loadedMeals.map(m => calculateMealNutrition(m, loadedFoods));
+    setMeals(calculatedMeals);
     setAssignments(loadWeeklyAssignments());
+    
+    // Set favorites as default if there are favorite meals
+    const favoriteMeals = calculatedMeals.filter(m => m.isFavorite);
+    if (favoriteMeals.length > 0) {
+      setShowOnlyFavorites(true);
+      setShowOnlyFavoriteMeals(true);
+    }
   }, []);
 
   const handleSaveMeal = (newMeal: Meal) => {

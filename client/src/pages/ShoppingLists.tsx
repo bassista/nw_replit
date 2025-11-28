@@ -37,6 +37,12 @@ export default function ShoppingLists() {
     const loadedFoods = loadFoods();
     setFoods(loadedFoods);
     setLists(loadedLists);
+    
+    // Set favorites as default if there are favorite foods
+    const favoriteFoods = loadedFoods.filter(f => f.isFavorite);
+    if (favoriteFoods.length > 0) {
+      setActiveTab("favorites");
+    }
   }, []);
 
   // Save lists when they change

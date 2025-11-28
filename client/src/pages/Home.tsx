@@ -57,6 +57,14 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [foodDialogTab, setFoodDialogTab] = useState<"all" | "favorites">("all");
   const { t } = useLanguage();
+  
+  // Set favorites tab as default if there are favorite foods
+  useEffect(() => {
+    const favoriteFoods = availableFoods.filter(f => f.isFavorite);
+    if (favoriteFoods.length > 0) {
+      setFoodDialogTab("favorites");
+    }
+  }, [showAddFoodDialog, availableFoods]);
 
   const dateKey = format(currentDate, 'yyyy-MM-dd');
 

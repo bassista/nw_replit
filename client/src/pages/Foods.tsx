@@ -67,8 +67,18 @@ export default function Foods() {
       ];
       saveFoods(defaultFoods);
       setFoods(defaultFoods);
+      // Set favorites as default
+      const favoriteFoods = defaultFoods.filter(f => f.isFavorite);
+      if (favoriteFoods.length > 0) {
+        setActiveTab("favorites");
+      }
     } else {
       setFoods(loadedFoods);
+      // Set favorites as default if there are favorite foods
+      const favoriteFoods = loadedFoods.filter(f => f.isFavorite);
+      if (favoriteFoods.length > 0) {
+        setActiveTab("favorites");
+      }
     }
     setCategories(loadCategories());
   }, []);
