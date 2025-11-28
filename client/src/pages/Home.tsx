@@ -171,23 +171,28 @@ export default function Home() {
       return;
     }
 
-    // Add all ingredients from the meal
+    // Accumulate all ingredients from the meal
+    const newItems: DailyMealItem[] = [];
     meal.ingredients.forEach(ing => {
       const food = availableFoods.find(f => f.id === ing.foodId);
       if (food) {
+        const baseGrams = food.gramsPerServing || 100;
         const newItem: DailyMealItem = {
           id: Date.now().toString() + Math.random(),
           foodId: ing.foodId,
           name: ing.name || food.name,
-          calories: Math.round(food.calories * ing.grams / 100),
-          protein: Math.round(food.protein * ing.grams / 100 * 10) / 10,
-          carbs: Math.round(food.carbs * ing.grams / 100 * 10) / 10,
-          fat: Math.round(food.fat * ing.grams / 100 * 10) / 10,
+          calories: Math.round(food.calories * ing.grams / baseGrams),
+          protein: Math.round(food.protein * ing.grams / baseGrams * 10) / 10,
+          carbs: Math.round(food.carbs * ing.grams / baseGrams * 10) / 10,
+          fat: Math.round(food.fat * ing.grams / baseGrams * 10) / 10,
           grams: ing.grams,
         };
-        setDailyMealItems(prev => [...prev, newItem]);
+        newItems.push(newItem);
       }
     });
+
+    // Add all items at once
+    setDailyMealItems(prev => [...prev, ...newItems]);
 
     toast({
       title: "Pasto copiato",
