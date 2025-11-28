@@ -328,21 +328,31 @@ export default function Home() {
   useEffect(() => {
     if (!sentinelRef.current || !scrollContainerRef.current) return;
 
-    const observer = new IntersectionObserver(
-      entries => {
-        if (entries[0].isIntersecting && hasMoreFoods) {
-          setDisplayedFoodsPage(prev => prev + 1);
-        }
-      },
-      { 
-        root: scrollContainerRef.current,
-        threshold: 0.1 
-      }
-    );
+    // Small delay to ensure DOM is ready
+    const timeoutId = setTimeout(() => {
+      if (!sentinelRef.current || !scrollContainerRef.current) return;
 
-    observer.observe(sentinelRef.current);
-    return () => observer.disconnect();
-  }, [hasMoreFoods]);
+      const observer = new IntersectionObserver(
+        entries => {
+          if (entries[0].isIntersecting && hasMoreFoods) {
+            setDisplayedFoodsPage(prev => prev + 1);
+          }
+        },
+        { 
+          root: scrollContainerRef.current,
+          threshold: 0.1 
+        }
+      );
+
+      observer.observe(sentinelRef.current);
+
+      return () => {
+        observer.disconnect();
+      };
+    }, 0);
+
+    return () => clearTimeout(timeoutId);
+  }, [hasMoreFoods, showAddFoodDialog]);
 
   // Calculate nutrients from daily meal
   const calculateNutrients = () => {
