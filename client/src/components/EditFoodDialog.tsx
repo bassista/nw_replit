@@ -19,6 +19,7 @@ import {
 import { useState, useEffect } from "react";
 import type { FoodItem } from "@shared/schema";
 import { useLanguage } from "@/lib/languageContext";
+import { ChevronUp, ChevronDown } from "lucide-react";
 
 interface EditFoodDialogProps {
   food: FoodItem | null;
@@ -118,17 +119,37 @@ export default function EditFoodDialog({
           </div>
 
           <div className="space-y-3 border rounded-lg p-3 bg-muted/20">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <Label>Quantità (g)</Label>
-              <Input
-                type="number"
-                min="0"
-                max="1000"
-                value={currentGrams}
-                onChange={(e) => handleGramsChange(Math.min(1000, Math.max(0, parseFloat(e.target.value) || 0)))}
-                className="w-20 h-9"
-                data-testid="input-quantity"
-              />
+              <div className="flex items-center gap-1">
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7"
+                  onClick={() => handleGramsChange(Math.max(0, currentGrams - 1))}
+                  data-testid="button-decrease-quantity"
+                >
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+                <Input
+                  type="number"
+                  min="0"
+                  max="1000"
+                  value={currentGrams}
+                  onChange={(e) => handleGramsChange(Math.min(1000, Math.max(0, parseFloat(e.target.value) || 0)))}
+                  className="w-20 h-9 text-center"
+                  data-testid="input-quantity"
+                />
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7"
+                  onClick={() => handleGramsChange(Math.min(1000, currentGrams + 1))}
+                  data-testid="button-increase-quantity"
+                >
+                  <ChevronUp className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
             <Slider
               value={[currentGrams]}
