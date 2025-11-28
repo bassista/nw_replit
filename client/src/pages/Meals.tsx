@@ -21,7 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Heart, Trash2, Search, ChevronLeft, ChevronRight, Calendar, X } from "lucide-react";
+import { Plus, Heart, Trash2, Search, ChevronLeft, ChevronRight, Calendar, X, ShoppingCart } from "lucide-react";
 import { useState, useEffect } from "react";
 import { addDays, subDays, startOfWeek, format, isSameWeek } from "date-fns";
 import { it } from "date-fns/locale";
@@ -172,6 +172,62 @@ export default function Meals() {
     }
   };
 
+  const handleCreateWeeklyShoppingList = () => {
+    const weekMealIds = new Set<string>();
+    const uniqueIngredients = new Map<string, any>();
+
+    // Collect all meal IDs for the current week
+    assignments.forEach(assignment => {
+      const assignmentDate = new Date(currentWeekStart);
+      assignmentDate.setDate(assignmentDate.getDate() + assignment.dayOfWeek);
+      
+      // Check if assignment is in current week
+      if (isSameWeek(assignmentDate, currentWeekStart, { weekStartsOn: 0 })) {
+        weekMealIds.add(assignment.mealId);
+      }
+    });
+
+    // Collect unique ingredients from meals in this week
+    weekMealIds.forEach(mealId => {
+      const meal = meals.find(m => m.id === mealId);
+      if (meal) {
+        meal.ingredients.forEach(ing => {
+          const foodName = ing.name || foods.find(f => f.id === ing.foodId)?.name || 'Alimento';
+          if (!uniqueIngredients.has(foodName)) {
+            uniqueIngredients.set(foodName, {
+              id: Date.now().toString() + Math.random(),
+              name: foodName,
+              checked: false,
+            });
+          }
+        });
+      }
+    });
+
+    if (uniqueIngredients.size === 0) {
+      toast({
+        title: 'Nessun pasto',
+        description: 'Non ci sono pasti assegnati a questa settimana',
+      });
+      return;
+    }
+
+    const currentLists = loadShoppingLists();
+    const startDate = format(currentWeekStart, 'd MMM', { locale: it });
+    const endDate = format(addDays(currentWeekStart, 6), 'd MMM yyyy', { locale: it });
+    const newList = {
+      id: Date.now().toString(),
+      name: `Spesa Settimanale - ${startDate} / ${endDate}`,
+      items: Array.from(uniqueIngredients.values()),
+      isPredefined: false,
+    };
+    saveShoppingLists([...currentLists, newList]);
+    toast({
+      title: 'Lista creata',
+      description: `Lista settimanale creata con ${uniqueIngredients.size} ingredienti`,
+    });
+  };
+
 
   // Filter meals by search and favorites (for main list)
   const filteredMeals = meals.filter(meal => {
@@ -207,14 +263,25 @@ export default function Meals() {
         </Button>
 
         {/* Navigation Buttons */}
-        <Button
-          variant="outline"
-          className="w-full"
-          data-testid="button-toggle-calendar"
-          onClick={() => setShowCalendar(!showCalendar)}
-        >
-          {showCalendar ? '📅 Nascondi' : '📋 Mostra'}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            className="flex-1"
+            data-testid="button-weekly-shopping-list"
+            onClick={handleCreateWeeklyShoppingList}
+          >
+            <ShoppingCart className="w-4 h-4 mr-2" />
+            Lista Settimanale
+          </Button>
+          <Button
+            variant="outline"
+            className="flex-1"
+            data-testid="button-toggle-calendar"
+            onClick={() => setShowCalendar(!showCalendar)}
+          >
+            {showCalendar ? '📅 Nascondi' : '📋 Mostra'}
+          </Button>
+        </div>
 
         {/* Week Navigation */}
         {showCalendar && (
