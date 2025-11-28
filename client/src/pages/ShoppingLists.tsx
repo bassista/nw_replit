@@ -36,35 +36,7 @@ export default function ShoppingLists() {
     const loadedLists = loadShoppingLists();
     const loadedFoods = loadFoods();
     setFoods(loadedFoods);
-    
-    if (loadedLists.length === 0) {
-      // Initialize with default lists
-      const defaultLists = [
-        {
-          id: '1',
-          name: 'Pasti',
-          items: [
-            { id: '1', name: 'Pollo', checked: false },
-            { id: '2', name: 'Pasta', checked: true },
-          ],
-          isPredefined: true,
-        },
-        {
-          id: '2',
-          name: 'Spesa Settimanale',
-          items: [
-            { id: '3', name: 'Latte', checked: false },
-            { id: '4', name: 'Uova', checked: false },
-            { id: '5', name: 'Verdure miste', checked: true },
-          ],
-          isPredefined: false,
-        },
-      ];
-      saveShoppingLists(defaultLists);
-      setLists(defaultLists);
-    } else {
-      setLists(loadedLists);
-    }
+    setLists(loadedLists);
   }, []);
 
   // Save lists when they change
