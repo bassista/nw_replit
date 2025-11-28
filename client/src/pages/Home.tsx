@@ -190,8 +190,10 @@ export default function Home() {
       }
     });
 
-    // Add all items at once
-    setDailyMealItems(prev => [...prev, ...newItems]);
+    // Add all items at once and save immediately
+    const updatedItems = [...dailyMealItems, ...newItems];
+    setDailyMealItems(updatedItems);
+    saveDailyMeal(dateKey, updatedItems);
 
     toast({
       title: "Pasto copiato",
