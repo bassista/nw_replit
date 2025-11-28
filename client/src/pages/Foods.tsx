@@ -528,7 +528,7 @@ export default function Foods() {
               <>
                 <div 
                   id="qr-reader"
-                  className="rounded-lg overflow-hidden bg-black"
+                  className="rounded-lg overflow-hidden bg-black qr-reader-container"
                   style={{ width: "100%", height: "300px" }}
                 />
                 <p className="text-xs text-muted-foreground text-center">
