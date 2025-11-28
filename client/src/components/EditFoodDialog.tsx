@@ -85,7 +85,23 @@ export default function EditFoodDialog({
   };
 
   const handleSave = () => {
-    onSave(formData);
+    // Normalizzare i nutrienti back to 100g prima di salvare
+    if (currentGrams > 0 && baseFood) {
+      const denormalizedMultiplier = 100 / currentGrams;
+      const normalizedFood = {
+        ...formData,
+        calories: Math.max(0, Math.round(formData.calories * denormalizedMultiplier)),
+        protein: Math.max(0, Math.round(formData.protein * denormalizedMultiplier * 10) / 10),
+        carbs: Math.max(0, Math.round(formData.carbs * denormalizedMultiplier * 10) / 10),
+        fat: Math.max(0, Math.round(formData.fat * denormalizedMultiplier * 10) / 10),
+        fiber: Math.max(0, Math.round((formData.fiber || 0) * denormalizedMultiplier * 10) / 10),
+        sugar: Math.max(0, Math.round((formData.sugar || 0) * denormalizedMultiplier * 10) / 10),
+        sodium: Math.max(0, Math.round((formData.sodium || 0) * denormalizedMultiplier * 10) / 10),
+      };
+      onSave(normalizedFood);
+    } else {
+      onSave(formData);
+    }
     onClose();
   };
 
