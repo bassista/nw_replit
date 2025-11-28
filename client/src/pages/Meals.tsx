@@ -21,7 +21,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Heart, ShoppingCart, Trash2, Search, ChevronLeft, ChevronRight, Calendar } from "lucide-react";
+import { Plus, Heart, ShoppingCart, Trash2, Search, ChevronLeft, ChevronRight, Calendar, X } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { addDays, subDays, startOfWeek, format, isSameWeek } from "date-fns";
@@ -47,6 +48,11 @@ export default function Meals() {
   const [showDaySelector, setShowDaySelector] = useState(false);
   const [currentWeekStart, setCurrentWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 0 }));
   const [shoppingLists, setShoppingLists] = useState<any[]>([]);
+  const [showSelectMealForDay, setShowSelectMealForDay] = useState(false);
+  const [selectedDayForMealSelection, setSelectedDayForMealSelection] = useState<number | null>(null);
+  const [mealSearchQuery, setMealSearchQuery] = useState('');
+  const [showOnlyFavoriteMeals, setShowOnlyFavoriteMeals] = useState(false);
+  const [dayNames] = useState(['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato']);
 
   useEffect(() => {
     const loadedFoods = loadFoods();
@@ -90,6 +96,10 @@ export default function Meals() {
 
   const handleDayClick = (dayOfWeek: number) => {
     setSelectedDayForMeal(dayOfWeek);
+    setSelectedDayForMealSelection(dayOfWeek);
+    setShowSelectMealForDay(true);
+    setMealSearchQuery('');
+    setShowOnlyFavoriteMeals(false);
   };
 
   const handleAssignMealToDay = (dayOfWeek: number, meal: Meal) => {
@@ -167,10 +177,17 @@ export default function Meals() {
     }
   };
 
-  // Filter meals by search and favorites
+  // Filter meals by search and favorites (for main list)
   const filteredMeals = meals.filter(meal => {
     const matchesSearch = meal.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesFavorite = !showOnlyFavorites || meal.isFavorite;
+    return matchesSearch && matchesFavorite;
+  });
+
+  // Filter meals for day selection dialog
+  const filteredMealsForDay = meals.filter(meal => {
+    const matchesSearch = meal.name.toLowerCase().includes(mealSearchQuery.toLowerCase());
+    const matchesFavorite = !showOnlyFavoriteMeals || meal.isFavorite;
     return matchesSearch && matchesFavorite;
   });
 
@@ -351,7 +368,7 @@ export default function Meals() {
           </DialogHeader>
           
           <div className="space-y-2">
-            {['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'].map((day, dayIndex) => (
+            {dayNames.map((day, dayIndex) => (
               <Button
                 key={dayIndex}
                 variant="outline"
@@ -378,6 +395,92 @@ export default function Meals() {
                 setMealToAssignToDay(null);
               }}
               data-testid="button-cancel-day-selection"
+            >
+              Annulla
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Select Meal for Day Dialog */}
+      <Dialog open={showSelectMealForDay} onOpenChange={(open) => {
+        setShowSelectMealForDay(open);
+        if (!open) {
+          setSelectedDayForMealSelection(null);
+          setMealSearchQuery('');
+          setShowOnlyFavoriteMeals(false);
+        }
+      }}>
+        <DialogContent className="flex flex-col max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>Assegna Pasto a {selectedDayForMealSelection !== null ? dayNames[selectedDayForMealSelection] : 'Giorno'}</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 flex-1 overflow-hidden flex flex-col">
+            <div className="relative flex-shrink-0">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Cerca pasto..."
+                value={mealSearchQuery}
+                onChange={(e) => setMealSearchQuery(e.target.value)}
+                className="pl-10"
+                data-testid="input-search-meal-for-day"
+              />
+            </div>
+
+            <Button
+              variant={showOnlyFavoriteMeals ? "default" : "outline"}
+              className="w-full flex-shrink-0"
+              data-testid="button-toggle-favorite-meals-for-day"
+              onClick={() => setShowOnlyFavoriteMeals(!showOnlyFavoriteMeals)}
+            >
+              <Heart className="w-4 h-4 mr-2" fill={showOnlyFavoriteMeals ? "currentColor" : "none"} />
+              Solo Preferiti ({meals.filter(m => m.isFavorite).length})
+            </Button>
+
+            <div className="space-y-2 flex-1 overflow-y-auto min-h-0">
+              {filteredMealsForDay.length > 0 ? (
+                filteredMealsForDay.map(meal => (
+                  <button
+                    key={meal.id}
+                    onClick={() => {
+                      if (selectedDayForMealSelection !== null) {
+                        handleAssignMealToDay(selectedDayForMealSelection, meal);
+                        setShowSelectMealForDay(false);
+                      }
+                    }}
+                    className="w-full text-left p-3 rounded-md border border-card-border hover-elevate"
+                    data-testid={`button-select-meal-${meal.id}-for-day`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-foreground">{meal.name}</p>
+                          {meal.isFavorite && (
+                            <Heart className="w-4 h-4 text-destructive fill-destructive flex-shrink-0" />
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {meal.ingredientCount} ingredienti • {meal.totalCalories} kcal
+                        </p>
+                      </div>
+                      <Plus className="w-4 h-4 text-primary flex-shrink-0" />
+                    </div>
+                  </button>
+                ))
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  {meals.length === 0 ? 'Nessun pasto creato' : 'Nessun pasto trovato'}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowSelectMealForDay(false)}
+              data-testid="button-cancel-meal-selection"
             >
               Annulla
             </Button>
