@@ -25,7 +25,7 @@ import { Plus, Heart, Trash2, Search, ChevronLeft, ChevronRight, Calendar, X } f
 import { useState, useEffect } from "react";
 import { addDays, subDays, startOfWeek, format, isSameWeek } from "date-fns";
 import { it } from "date-fns/locale";
-import { loadFoods, loadMeals, saveMeals, loadWeeklyAssignments, assignMealToDay, removeMealFromDay, calculateMealNutrition, saveDailyMeal, getDailyMeal } from "@/lib/storage";
+import { loadFoods, loadMeals, saveMeals, loadWeeklyAssignments, assignMealToDay, removeMealFromDay, calculateMealNutrition, saveDailyMeal, getDailyMeal, loadShoppingLists, saveShoppingLists } from "@/lib/storage";
 import { useToast } from "@/hooks/use-toast";
 import type { Meal, DailyMealItem } from "@/lib/storage";
 import type { FoodItem } from "@shared/schema";
@@ -146,6 +146,28 @@ export default function Meals() {
       toast({
         title: 'Aggiunto',
         description: `${meal.ingredients.length} ingredienti di "${meal.name}" aggiunti al diario`,
+      });
+    }
+  };
+
+  const handleAddMealToShoppingList = (mealId: string) => {
+    const meal = meals.find(m => m.id === mealId);
+    if (meal) {
+      const currentLists = loadShoppingLists();
+      const newList = {
+        id: Date.now().toString(),
+        name: `Lista - ${meal.name}`,
+        items: meal.ingredients.map(ing => ({
+          id: Date.now().toString() + Math.random(),
+          name: ing.name || foods.find(f => f.id === ing.foodId)?.name || 'Alimento',
+          checked: false,
+        })),
+        isPredefined: false,
+      };
+      saveShoppingLists([...currentLists, newList]);
+      toast({
+        title: 'Lista creata',
+        description: `Lista della spesa "${newList.name}" creata con ${meal.ingredients.length} ingredienti`,
       });
     }
   };
@@ -274,6 +296,7 @@ export default function Meals() {
                 }}
                 onDelete={() => setMealToDelete(meal.id)}
                 onToggleFavorite={() => handleToggleFavorite(meal.id)}
+                onAddToShoppingList={() => handleAddMealToShoppingList(meal.id)}
                 onAddToCalendar={() => handleAddToCalendar(meal.id)}
                 onAddMealToDiary={() => handleAddMealToDiary(meal.id)}
               />
