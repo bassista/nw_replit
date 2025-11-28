@@ -5,6 +5,15 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -57,6 +66,7 @@ export default function EditFoodDialog({
   );
   const [baseFood, setBaseFood] = useState<FoodItem | null>(null);
   const [currentGrams, setCurrentGrams] = useState(100);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   // Update formData when food changes
   useEffect(() => {
@@ -93,9 +103,14 @@ export default function EditFoodDialog({
     onClose();
   };
 
-  const handleDelete = () => {
+  const handleDeleteClick = () => {
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
     if (food && onDelete) {
       onDelete(food.id);
+      setDeleteConfirmOpen(false);
       onClose();
     }
   };
@@ -281,7 +296,7 @@ export default function EditFoodDialog({
           {food && onDelete && (
             <Button
               variant="destructive"
-              onClick={handleDelete}
+              onClick={handleDeleteClick}
               data-testid="button-delete-food"
             >
               {t.foods.delete}
@@ -295,6 +310,29 @@ export default function EditFoodDialog({
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Elimina {food?.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Questa azione non può essere annullata. Il cibo verrà eliminato definitivamente dal database.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex gap-2">
+            <AlertDialogCancel data-testid="button-cancel-delete">
+              Annulla
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirm-delete"
+            >
+              Elimina
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
