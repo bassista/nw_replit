@@ -13,6 +13,7 @@ export const foodItemSchema = z.object({
   sugar: z.number().optional(),
   sodium: z.number().optional(),
   isFavorite: z.boolean().default(false),
+  gramsPerServing: z.number().default(100),
 });
 
 export type FoodItem = z.infer<typeof foodItemSchema>;

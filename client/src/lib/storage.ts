@@ -524,6 +524,7 @@ export function importFoodsFromCSV(csv: string): FoodItem[] {
         sugar,
         sodium,
         isFavorite: false,
+        gramsPerServing: 100,
       };
 
       foods.push(food);
