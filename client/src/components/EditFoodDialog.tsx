@@ -141,7 +141,7 @@ export default function EditFoodDialog({
                   size="icon"
                   variant="ghost"
                   className="h-7 w-7"
-                  onClick={() => handleGramsChange(Math.max(0, currentGrams - 1))}
+                  onClick={() => handleGramsChange(Math.max(0, currentGrams - 5))}
                   data-testid="button-decrease-quantity"
                 >
                   <ChevronDown className="h-4 w-4" />
@@ -159,7 +159,7 @@ export default function EditFoodDialog({
                   size="icon"
                   variant="ghost"
                   className="h-7 w-7"
-                  onClick={() => handleGramsChange(Math.min(1000, currentGrams + 1))}
+                  onClick={() => handleGramsChange(Math.min(1000, currentGrams + 5))}
                   data-testid="button-increase-quantity"
                 >
                   <ChevronUp className="h-4 w-4" />
@@ -171,7 +171,7 @@ export default function EditFoodDialog({
               onValueChange={(value) => handleGramsChange(value[0])}
               min={0}
               max={1000}
-              step={1}
+              step={5}
               data-testid="slider-quantity"
               className="w-full"
             />
