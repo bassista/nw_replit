@@ -177,6 +177,54 @@ export default function Meals() {
     }
   };
 
+  const handleAddWeeklyShoppingList = () => {
+    // Collect all unique ingredients from weekly meals
+    const ingredientMap = new Map<string, any>(); // key is foodId
+
+    assignments.forEach(assignment => {
+      if (assignment.mealId) {
+        const meal = meals.find(m => m.id === assignment.mealId);
+        if (meal && meal.ingredients) {
+          meal.ingredients.forEach((ing: any) => {
+            if (!ingredientMap.has(ing.foodId)) {
+              ingredientMap.set(ing.foodId, {
+                id: Date.now().toString() + Math.random(),
+                name: ing.name,
+                quantity: ing.quantity,
+                unit: ing.unit,
+                checked: false,
+              });
+            }
+          });
+        }
+      }
+    });
+
+    if (ingredientMap.size === 0) {
+      toast({
+        title: 'Nessun pasto assegnato',
+        description: 'Assegna almeno un pasto a un giorno della settimana',
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const newShoppingList = {
+      id: Date.now().toString(),
+      name: `Settimana ${format(currentWeekStart, 'd MMM', { locale: it })} - ${format(addDays(currentWeekStart, 6), 'd MMM yyyy', { locale: it })}`,
+      items: Array.from(ingredientMap.values()),
+    };
+
+    const updatedLists = [...shoppingLists, newShoppingList];
+    setShoppingLists(updatedLists);
+    saveShoppingLists(updatedLists);
+
+    toast({
+      title: 'Lista spesa creata',
+      description: `${ingredientMap.size} ingredienti unici aggiunti alla lista spesa`,
+    });
+  };
+
   // Filter meals by search and favorites (for main list)
   const filteredMeals = meals.filter(meal => {
     const matchesSearch = meal.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -215,13 +263,11 @@ export default function Meals() {
           <Button
             variant="outline"
             className="w-full"
-            data-testid="button-go-to-shopping-lists"
-            asChild
+            data-testid="button-add-weekly-shopping-list"
+            onClick={handleAddWeeklyShoppingList}
           >
-            <Link href="/lists">
-              <ShoppingCart className="w-4 h-4 mr-2" />
-              Lista Spesa
-            </Link>
+            <ShoppingCart className="w-4 h-4 mr-2" />
+            Crea Lista Spesa
           </Button>
 
           <Button
