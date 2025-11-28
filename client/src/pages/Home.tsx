@@ -53,6 +53,8 @@ export default function Home() {
   const [daysBackInput, setDaysBackInput] = useState('1');
   const [showClearDayConfirm, setShowClearDayConfirm] = useState(false);
   const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const { t } = useLanguage();
 
   const dateKey = format(currentDate, 'yyyy-MM-dd');
@@ -301,9 +303,14 @@ export default function Home() {
     setDraggedItemId(null);
   };
 
-  const filteredFoods = availableFoods.filter(food =>
-    food.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const categories = Array.from(new Set(availableFoods.map(f => f.category))).sort();
+
+  const filteredFoods = availableFoods.filter(food => {
+    const matchesSearch = food.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = selectedCategory === 'all' || food.category === selectedCategory;
+    const matchesFavorites = !showFavoritesOnly || food.isFavorite;
+    return matchesSearch && matchesCategory && matchesFavorites;
+  });
 
   // Calculate nutrients from daily meal
   const calculateNutrients = () => {
@@ -589,7 +596,14 @@ export default function Home() {
       </div>
 
       {/* Add Food Dialog */}
-      <Dialog open={showAddFoodDialog} onOpenChange={setShowAddFoodDialog}>
+      <Dialog open={showAddFoodDialog} onOpenChange={(open) => {
+        setShowAddFoodDialog(open);
+        if (!open) {
+          setSelectedCategory('all');
+          setShowFavoritesOnly(false);
+          setSearchQuery('');
+        }
+      }}>
         <DialogContent className="max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{t.diary.addFood}</DialogTitle>
@@ -605,6 +619,37 @@ export default function Home() {
                 className="pl-10"
                 data-testid="input-search-add-food"
               />
+            </div>
+
+            <div className="space-y-3 border rounded-lg p-3 bg-muted/20">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Categoria</Label>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="w-full px-3 py-2 rounded-md border border-input bg-background text-foreground text-sm"
+                  data-testid="select-category-filter"
+                >
+                  <option value="all">Tutte le categorie</option>
+                  {categories.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="favorites-filter"
+                  checked={showFavoritesOnly}
+                  onChange={(e) => setShowFavoritesOnly(e.target.checked)}
+                  className="rounded border-input"
+                  data-testid="checkbox-favorites-filter"
+                />
+                <Label htmlFor="favorites-filter" className="text-sm font-medium cursor-pointer">
+                  Solo preferiti
+                </Label>
+              </div>
             </div>
 
             <div className="space-y-2 max-h-96 overflow-y-auto">
