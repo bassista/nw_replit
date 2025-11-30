@@ -174,7 +174,11 @@ export default function Health() {
           mlConsumed={waterMl}
           targetMl={settings.waterTargetMl}
           glassCapacityMl={settings.glassCapacityMl}
-          onAddGlass={() => setWaterMl(prev => prev + settings.glassCapacityMl)}
+          onAddGlass={() => {
+            const newWaterMl = waterMl + settings.glassCapacityMl;
+            setWaterMl(newWaterMl);
+            saveWaterIntake(dateKey, newWaterMl);
+          }}
         />
 
         {/* Health Metrics */}
