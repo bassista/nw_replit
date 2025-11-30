@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">nutritionwise</string>
+    <string name="title_activity_main">nutritionwise</string>
+    <string name="package_name">com.sgambato.nutritionwise</string>
+    <string name="custom_url_scheme">com.sgambato.nutritionwise</string>
+</resources>
