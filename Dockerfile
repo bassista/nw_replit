@@ -17,7 +17,7 @@ RUN apk add --no-cache dumb-init
 
 COPY package.json package-lock.json ./
 
-RUN npm ci --only=production && \
+RUN npm ci && \
     npm cache clean --force
 
 COPY --from=builder /app/dist ./dist
