@@ -6,15 +6,9 @@ import { Card } from "@/components/ui/card";
 import { Trash2, Plus, Search } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Slider } from "@/components/ui/slider";
 import type { FoodItem } from "@shared/schema";
 import type { Meal, MealIngredient } from "@/lib/storage";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 interface AddMealDialogProps {
   open: boolean;
@@ -27,12 +21,13 @@ interface AddMealDialogProps {
 export default function AddMealDialog({ open, onClose, onSave, foods, initialMeal }: AddMealDialogProps) {
   const [mealName, setMealName] = useState(initialMeal?.name || "");
   const [ingredients, setIngredients] = useState<MealIngredient[]>(initialMeal?.ingredients || []);
-  const [selectedFoodId, setSelectedFoodId] = useState("");
-  const [selectedGrams, setSelectedGrams] = useState("100");
   const [showFoodDialog, setShowFoodDialog] = useState(false);
   const [foodSearchQuery, setFoodSearchQuery] = useState("");
   const [foodDialogTab, setFoodDialogTab] = useState<"all" | "favorites">("all");
   const [selectedFoodCategory, setSelectedFoodCategory] = useState<string>("all");
+  const [selectedFoodForQuantity, setSelectedFoodForQuantity] = useState<FoodItem | null>(null);
+  const [selectedQuantity, setSelectedQuantity] = useState(100);
+  const [showQuantityDialog, setShowQuantityDialog] = useState(false);
   
   // Get unique categories from foods
   const categories = Array.from(new Set(foods.map(f => f.category))).sort();
@@ -45,11 +40,11 @@ export default function AddMealDialog({ open, onClose, onSave, foods, initialMea
     } else if (!open) {
       setMealName("");
       setIngredients([]);
-      setSelectedFoodId("");
-      setSelectedGrams("100");
       setFoodSearchQuery("");
       setSelectedFoodCategory("all");
       setFoodDialogTab("all");
+      setSelectedFoodForQuantity(null);
+      setSelectedQuantity(100);
     }
   }, [open, initialMeal]);
   
@@ -71,25 +66,26 @@ export default function AddMealDialog({ open, onClose, onSave, foods, initialMea
     return matchesSearch && matchesCategory && matchesFavorites;
   });
   
-  const handleSelectFood = (foodId: string) => {
-    setSelectedFoodId(foodId);
-    setShowFoodDialog(false);
+  const handleSelectFood = (food: FoodItem) => {
+    setSelectedFoodForQuantity(food);
+    setSelectedQuantity(100);
+    setShowQuantityDialog(true);
   };
 
-  const handleAddIngredient = () => {
-    if (!selectedFoodId) return;
-    const food = foods.find(f => f.id === selectedFoodId);
-    if (!food) return;
+  const handleConfirmQuantity = () => {
+    if (!selectedFoodForQuantity) return;
 
     const newIngredient: MealIngredient = {
-      foodId: selectedFoodId,
-      grams: parseInt(selectedGrams),
-      name: food.name,
+      foodId: selectedFoodForQuantity.id,
+      grams: selectedQuantity,
+      name: selectedFoodForQuantity.name,
     };
 
     setIngredients([...ingredients, newIngredient]);
-    setSelectedFoodId("");
-    setSelectedGrams("100");
+    setShowQuantityDialog(false);
+    setShowFoodDialog(false);
+    setFoodSearchQuery("");
+    setSelectedFoodCategory("all");
   };
 
   const handleRemoveIngredient = (idx: number) => {
@@ -114,11 +110,7 @@ export default function AddMealDialog({ open, onClose, onSave, foods, initialMea
     onSave(newMeal);
     setMealName("");
     setIngredients([]);
-    setSelectedFoodId("");
-    setSelectedGrams("100");
   };
-
-  const selectedFood = foods.find(f => f.id === selectedFoodId);
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -141,50 +133,15 @@ export default function AddMealDialog({ open, onClose, onSave, foods, initialMea
 
           {/* Add Ingredients */}
           <div className="space-y-2 border-t pt-4">
-            <Label>Aggiungi Ingredienti</Label>
-            
-            <div className="space-y-2">
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => setShowFoodDialog(true)}
-                data-testid="button-select-food"
-              >
-                <Search className="w-4 h-4 mr-2" />
-                {selectedFood ? selectedFood.name : 'Seleziona un alimento...'}
-              </Button>
-
-              <div className="flex gap-2">
-                <div className="flex-1 space-y-1">
-                  <Label className="text-xs">Grammi</Label>
-                  <Input
-                    type="number"
-                    min="10"
-                    max="1000"
-                    value={selectedGrams}
-                    onChange={(e) => setSelectedGrams(e.target.value)}
-                    data-testid="input-grams"
-                  />
-                </div>
-                <div className="flex-1 space-y-1">
-                  <Label className="text-xs">Calorie (100g)</Label>
-                  <div className="text-sm p-2 bg-muted rounded">
-                    {selectedFood?.calories || 0}
-                  </div>
-                </div>
-              </div>
-
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={handleAddIngredient}
-                disabled={!selectedFoodId}
-                data-testid="button-add-ingredient"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Aggiungi Ingrediente
-              </Button>
-            </div>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => setShowFoodDialog(true)}
+              data-testid="button-add-ingredient"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Aggiungi Ingrediente
+            </Button>
           </div>
 
           {/* Ingredients List */}
@@ -292,22 +249,114 @@ export default function AddMealDialog({ open, onClose, onSave, foods, initialMea
                 </div>
               ) : (
                 filteredFoods.map(food => (
-                  <Button
+                  <button
                     key={food.id}
-                    variant="outline"
-                    className="w-full justify-start"
-                    onClick={() => handleSelectFood(food.id)}
-                    data-testid={`button-food-${food.id}`}
+                    onClick={() => handleSelectFood(food)}
+                    className="w-full text-left p-3 rounded-md border border-card-border hover-elevate"
+                    data-testid={`food-option-meal-${food.id}`}
                   >
-                    <div className="flex-1 text-left">
-                      <p className="text-sm font-medium">{food.name}</p>
-                      <p className="text-xs text-muted-foreground">{food.category}</p>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-foreground">{food.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {food.category} • {food.calories} kcal (per 100g)
+                        </p>
+                      </div>
+                      <Plus className="w-4 h-4 text-primary" />
                     </div>
-                  </Button>
+                  </button>
                 ))
               )}
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Quantity Dialog */}
+      <Dialog open={showQuantityDialog} onOpenChange={setShowQuantityDialog}>
+        <DialogContent className="w-96">
+          <DialogHeader>
+            <DialogTitle>Seleziona Quantità</DialogTitle>
+          </DialogHeader>
+
+          {selectedFoodForQuantity && (
+            <div className="space-y-6">
+              <div>
+                <p className="font-semibold text-foreground mb-2">{selectedFoodForQuantity.name}</p>
+                <p className="text-sm text-muted-foreground">{selectedFoodForQuantity.category}</p>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-base font-semibold mb-3 block">
+                    Quantità: {selectedQuantity}g
+                  </Label>
+                  <Slider
+                    value={[selectedQuantity]}
+                    onValueChange={(value) => setSelectedQuantity(Math.max(10, value[0]))}
+                    min={10}
+                    max={500}
+                    step={5}
+                    data-testid="slider-quantity-meal"
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground mt-2">
+                    <span>10g</span>
+                    <span>500g</span>
+                  </div>
+                </div>
+
+                {/* Nutritional Preview */}
+                <Card className="p-4 bg-muted/50">
+                  <p className="text-sm font-semibold text-foreground mb-3">Valori nutrizionali (per {selectedQuantity}g):</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Calorie</p>
+                      <p className="text-lg font-semibold text-foreground">
+                        {Math.round(selectedFoodForQuantity.calories * (selectedQuantity / 100))}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Proteine</p>
+                      <p className="text-lg font-semibold text-foreground">
+                        {Math.round(selectedFoodForQuantity.protein * (selectedQuantity / 100))}g
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Carbs</p>
+                      <p className="text-lg font-semibold text-foreground">
+                        {Math.round(selectedFoodForQuantity.carbs * (selectedQuantity / 100))}g
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Grassi</p>
+                      <p className="text-lg font-semibold text-foreground">
+                        {Math.round(selectedFoodForQuantity.fat * (selectedQuantity / 100))}g
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setShowQuantityDialog(false)}
+                  data-testid="button-cancel-quantity-meal"
+                >
+                  Annulla
+                </Button>
+                <Button
+                  variant="default"
+                  className="flex-1"
+                  onClick={handleConfirmQuantity}
+                  data-testid="button-confirm-quantity-meal"
+                >
+                  Aggiungi
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </Dialog>
