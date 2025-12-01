@@ -3,17 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, Search } from "lucide-react";
 import { useState, useEffect } from "react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Slider } from "@/components/ui/slider";
 import type { FoodItem } from "@shared/schema";
 import type { Meal, MealIngredient } from "@/lib/storage";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { matchesSmartSearch } from "@/lib/search";
 
 interface AddMealDialogProps {
   open: boolean;
@@ -26,8 +22,16 @@ interface AddMealDialogProps {
 export default function AddMealDialog({ open, onClose, onSave, foods, initialMeal }: AddMealDialogProps) {
   const [mealName, setMealName] = useState(initialMeal?.name || "");
   const [ingredients, setIngredients] = useState<MealIngredient[]>(initialMeal?.ingredients || []);
-  const [selectedFoodId, setSelectedFoodId] = useState("");
-  const [selectedGrams, setSelectedGrams] = useState("100");
+  const [showFoodDialog, setShowFoodDialog] = useState(false);
+  const [foodSearchQuery, setFoodSearchQuery] = useState("");
+  const [foodDialogTab, setFoodDialogTab] = useState<"all" | "favorites">("all");
+  const [selectedFoodCategory, setSelectedFoodCategory] = useState<string>("all");
+  const [selectedFoodForQuantity, setSelectedFoodForQuantity] = useState<FoodItem | null>(null);
+  const [selectedQuantity, setSelectedQuantity] = useState(100);
+  const [showQuantityDialog, setShowQuantityDialog] = useState(false);
+  
+  // Get unique categories from foods
+  const categories = Array.from(new Set(foods.map(f => f.category))).sort();
 
   // Reset form when dialog opens/closes or initialMeal changes
   useEffect(() => {
@@ -37,25 +41,52 @@ export default function AddMealDialog({ open, onClose, onSave, foods, initialMea
     } else if (!open) {
       setMealName("");
       setIngredients([]);
-      setSelectedFoodId("");
-      setSelectedGrams("100");
+      setFoodSearchQuery("");
+      setSelectedFoodCategory("all");
+      setFoodDialogTab("all");
+      setSelectedFoodForQuantity(null);
+      setSelectedQuantity(100);
     }
   }, [open, initialMeal]);
+  
+  // Set favorites as default if there are favorite foods
+  useEffect(() => {
+    if (showFoodDialog) {
+      const favoriteFoods = foods.filter(f => f.isFavorite);
+      if (favoriteFoods.length > 0) {
+        setFoodDialogTab("favorites");
+      }
+    }
+  }, [showFoodDialog, foods]);
+  
+  // Filter foods based on search, category, and favorites
+  const filteredFoods = foods.filter(food => {
+    const matchesSearch = matchesSmartSearch(food.name, foodSearchQuery);
+    const matchesCategory = selectedFoodCategory === "all" || food.category === selectedFoodCategory;
+    const matchesFavorites = foodDialogTab === "all" || (foodDialogTab === "favorites" && food.isFavorite);
+    return matchesSearch && matchesCategory && matchesFavorites;
+  });
+  
+  const handleSelectFood = (food: FoodItem) => {
+    setSelectedFoodForQuantity(food);
+    setSelectedQuantity(100);
+    setShowQuantityDialog(true);
+  };
 
-  const handleAddIngredient = () => {
-    if (!selectedFoodId) return;
-    const food = foods.find(f => f.id === selectedFoodId);
-    if (!food) return;
+  const handleConfirmQuantity = () => {
+    if (!selectedFoodForQuantity) return;
 
     const newIngredient: MealIngredient = {
-      foodId: selectedFoodId,
-      grams: parseInt(selectedGrams),
-      name: food.name,
+      foodId: selectedFoodForQuantity.id,
+      grams: selectedQuantity,
+      name: selectedFoodForQuantity.name,
     };
 
     setIngredients([...ingredients, newIngredient]);
-    setSelectedFoodId("");
-    setSelectedGrams("100");
+    setShowQuantityDialog(false);
+    setShowFoodDialog(false);
+    setFoodSearchQuery("");
+    setSelectedFoodCategory("all");
   };
 
   const handleRemoveIngredient = (idx: number) => {
@@ -80,11 +111,7 @@ export default function AddMealDialog({ open, onClose, onSave, foods, initialMea
     onSave(newMeal);
     setMealName("");
     setIngredients([]);
-    setSelectedFoodId("");
-    setSelectedGrams("100");
   };
-
-  const selectedFood = foods.find(f => f.id === selectedFoodId);
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -107,53 +134,15 @@ export default function AddMealDialog({ open, onClose, onSave, foods, initialMea
 
           {/* Add Ingredients */}
           <div className="space-y-2 border-t pt-4">
-            <Label>Aggiungi Ingredienti</Label>
-            
-            <div className="space-y-2">
-              <Select value={selectedFoodId} onValueChange={setSelectedFoodId}>
-                <SelectTrigger data-testid="select-food">
-                  <SelectValue placeholder="Seleziona un cibo..." />
-                </SelectTrigger>
-                <SelectContent className="max-h-48">
-                  {foods.map(food => (
-                    <SelectItem key={food.id} value={food.id}>
-                      {food.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <div className="flex gap-2">
-                <div className="flex-1 space-y-1">
-                  <Label className="text-xs">Grammi</Label>
-                  <Input
-                    type="number"
-                    min="10"
-                    max="1000"
-                    value={selectedGrams}
-                    onChange={(e) => setSelectedGrams(e.target.value)}
-                    data-testid="input-grams"
-                  />
-                </div>
-                <div className="flex-1 space-y-1">
-                  <Label className="text-xs">Calorie (100g)</Label>
-                  <div className="text-sm p-2 bg-muted rounded">
-                    {selectedFood?.calories || 0}
-                  </div>
-                </div>
-              </div>
-
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={handleAddIngredient}
-                disabled={!selectedFoodId}
-                data-testid="button-add-ingredient"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Aggiungi Ingrediente
-              </Button>
-            </div>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => setShowFoodDialog(true)}
+              data-testid="button-add-ingredient"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Aggiungi Ingrediente
+            </Button>
           </div>
 
           {/* Ingredients List */}
@@ -199,6 +188,178 @@ export default function AddMealDialog({ open, onClose, onSave, foods, initialMea
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      {/* Food Selection Dialog */}
+      <Dialog open={showFoodDialog} onOpenChange={(isOpen) => {
+        setShowFoodDialog(isOpen);
+        if (!isOpen) {
+          setFoodSearchQuery("");
+          setSelectedFoodCategory("all");
+          setFoodDialogTab("all");
+        }
+      }}>
+        <DialogContent className="max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Seleziona Alimento</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 flex-1 overflow-hidden flex flex-col">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Ricerca alimento..."
+                value={foodSearchQuery}
+                onChange={(e) => setFoodSearchQuery(e.target.value)}
+                className="pl-10"
+                data-testid="input-search-food-meal"
+              />
+            </div>
+
+            <Tabs value={foodDialogTab} onValueChange={(value) => setFoodDialogTab(value as "all" | "favorites")} className="w-full">
+              <TabsList className="w-full">
+                <TabsTrigger value="all" className="flex-1" data-testid="tab-all-foods-meal">
+                  Tutti
+                </TabsTrigger>
+                <TabsTrigger value="favorites" className="flex-1" data-testid="tab-favorite-foods-meal">
+                  Preferiti
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+
+            <div className="space-y-3 border rounded-lg p-3 bg-muted/20 flex-shrink-0">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Categoria</Label>
+                <select
+                  value={selectedFoodCategory}
+                  onChange={(e) => setSelectedFoodCategory(e.target.value)}
+                  className="w-full px-3 py-2 rounded-md border border-input bg-background text-foreground text-sm"
+                  data-testid="select-category-meal"
+                >
+                  <option value="all">Tutte le categorie</option>
+                  {categories.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="space-y-2 flex-1 overflow-y-auto">
+              {filteredFoods.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  Nessun alimento trovato
+                </div>
+              ) : (
+                filteredFoods.map(food => (
+                  <button
+                    key={food.id}
+                    onClick={() => handleSelectFood(food)}
+                    className="w-full text-left p-3 rounded-md border border-card-border hover-elevate"
+                    data-testid={`food-option-meal-${food.id}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-foreground">{food.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {food.category} • {food.calories} kcal (per 100g)
+                        </p>
+                      </div>
+                      <Plus className="w-4 h-4 text-primary" />
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Quantity Dialog */}
+      <Dialog open={showQuantityDialog} onOpenChange={setShowQuantityDialog}>
+        <DialogContent className="w-96">
+          <DialogHeader>
+            <DialogTitle>Seleziona Quantità</DialogTitle>
+          </DialogHeader>
+
+          {selectedFoodForQuantity && (
+            <div className="space-y-6">
+              <div>
+                <p className="font-semibold text-foreground mb-2">{selectedFoodForQuantity.name}</p>
+                <p className="text-sm text-muted-foreground">{selectedFoodForQuantity.category}</p>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-base font-semibold mb-3 block">
+                    Quantità: {selectedQuantity}g
+                  </Label>
+                  <Slider
+                    value={[selectedQuantity]}
+                    onValueChange={(value) => setSelectedQuantity(Math.max(10, value[0]))}
+                    min={10}
+                    max={500}
+                    step={5}
+                    data-testid="slider-quantity-meal"
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground mt-2">
+                    <span>10g</span>
+                    <span>500g</span>
+                  </div>
+                </div>
+
+                {/* Nutritional Preview */}
+                <Card className="p-4 bg-muted/50">
+                  <p className="text-sm font-semibold text-foreground mb-3">Valori nutrizionali (per {selectedQuantity}g):</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Calorie</p>
+                      <p className="text-lg font-semibold text-foreground">
+                        {Math.round(selectedFoodForQuantity.calories * (selectedQuantity / 100))}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Proteine</p>
+                      <p className="text-lg font-semibold text-foreground">
+                        {Math.round(selectedFoodForQuantity.protein * (selectedQuantity / 100))}g
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Carbs</p>
+                      <p className="text-lg font-semibold text-foreground">
+                        {Math.round(selectedFoodForQuantity.carbs * (selectedQuantity / 100))}g
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Grassi</p>
+                      <p className="text-lg font-semibold text-foreground">
+                        {Math.round(selectedFoodForQuantity.fat * (selectedQuantity / 100))}g
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setShowQuantityDialog(false)}
+                  data-testid="button-cancel-quantity-meal"
+                >
+                  Annulla
+                </Button>
+                <Button
+                  variant="default"
+                  className="flex-1"
+                  onClick={handleConfirmQuantity}
+                  data-testid="button-confirm-quantity-meal"
+                >
+                  Aggiungi
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
