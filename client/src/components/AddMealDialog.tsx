@@ -3,8 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, Search } from "lucide-react";
 import { useState, useEffect } from "react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { FoodItem } from "@shared/schema";
 import type { Meal, MealIngredient } from "@/lib/storage";
 import {
@@ -28,6 +29,13 @@ export default function AddMealDialog({ open, onClose, onSave, foods, initialMea
   const [ingredients, setIngredients] = useState<MealIngredient[]>(initialMeal?.ingredients || []);
   const [selectedFoodId, setSelectedFoodId] = useState("");
   const [selectedGrams, setSelectedGrams] = useState("100");
+  const [showFoodDialog, setShowFoodDialog] = useState(false);
+  const [foodSearchQuery, setFoodSearchQuery] = useState("");
+  const [foodDialogTab, setFoodDialogTab] = useState<"all" | "favorites">("all");
+  const [selectedFoodCategory, setSelectedFoodCategory] = useState<string>("all");
+  
+  // Get unique categories from foods
+  const categories = Array.from(new Set(foods.map(f => f.category))).sort();
 
   // Reset form when dialog opens/closes or initialMeal changes
   useEffect(() => {
@@ -39,8 +47,34 @@ export default function AddMealDialog({ open, onClose, onSave, foods, initialMea
       setIngredients([]);
       setSelectedFoodId("");
       setSelectedGrams("100");
+      setFoodSearchQuery("");
+      setSelectedFoodCategory("all");
+      setFoodDialogTab("all");
     }
   }, [open, initialMeal]);
+  
+  // Set favorites as default if there are favorite foods
+  useEffect(() => {
+    if (showFoodDialog) {
+      const favoriteFoods = foods.filter(f => f.isFavorite);
+      if (favoriteFoods.length > 0) {
+        setFoodDialogTab("favorites");
+      }
+    }
+  }, [showFoodDialog, foods]);
+  
+  // Filter foods based on search, category, and favorites
+  const filteredFoods = foods.filter(food => {
+    const matchesSearch = food.name.toLowerCase().includes(foodSearchQuery.toLowerCase());
+    const matchesCategory = selectedFoodCategory === "all" || food.category === selectedFoodCategory;
+    const matchesFavorites = foodDialogTab === "all" || (foodDialogTab === "favorites" && food.isFavorite);
+    return matchesSearch && matchesCategory && matchesFavorites;
+  });
+  
+  const handleSelectFood = (foodId: string) => {
+    setSelectedFoodId(foodId);
+    setShowFoodDialog(false);
+  };
 
   const handleAddIngredient = () => {
     if (!selectedFoodId) return;
@@ -110,18 +144,15 @@ export default function AddMealDialog({ open, onClose, onSave, foods, initialMea
             <Label>Aggiungi Ingredienti</Label>
             
             <div className="space-y-2">
-              <Select value={selectedFoodId} onValueChange={setSelectedFoodId}>
-                <SelectTrigger data-testid="select-food">
-                  <SelectValue placeholder="Seleziona un cibo..." />
-                </SelectTrigger>
-                <SelectContent className="max-h-48">
-                  {foods.map(food => (
-                    <SelectItem key={food.id} value={food.id}>
-                      {food.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => setShowFoodDialog(true)}
+                data-testid="button-select-food"
+              >
+                <Search className="w-4 h-4 mr-2" />
+                {selectedFood ? selectedFood.name : 'Seleziona un alimento...'}
+              </Button>
 
               <div className="flex gap-2">
                 <div className="flex-1 space-y-1">
@@ -199,6 +230,86 @@ export default function AddMealDialog({ open, onClose, onSave, foods, initialMea
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      {/* Food Selection Dialog */}
+      <Dialog open={showFoodDialog} onOpenChange={(isOpen) => {
+        setShowFoodDialog(isOpen);
+        if (!isOpen) {
+          setFoodSearchQuery("");
+          setSelectedFoodCategory("all");
+          setFoodDialogTab("all");
+        }
+      }}>
+        <DialogContent className="max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Seleziona Alimento</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 flex-1 overflow-hidden flex flex-col">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Ricerca alimento..."
+                value={foodSearchQuery}
+                onChange={(e) => setFoodSearchQuery(e.target.value)}
+                className="pl-10"
+                data-testid="input-search-food-meal"
+              />
+            </div>
+
+            <Tabs value={foodDialogTab} onValueChange={(value) => setFoodDialogTab(value as "all" | "favorites")} className="w-full">
+              <TabsList className="w-full">
+                <TabsTrigger value="all" className="flex-1" data-testid="tab-all-foods-meal">
+                  Tutti
+                </TabsTrigger>
+                <TabsTrigger value="favorites" className="flex-1" data-testid="tab-favorite-foods-meal">
+                  Preferiti
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+
+            <div className="space-y-3 border rounded-lg p-3 bg-muted/20 flex-shrink-0">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Categoria</Label>
+                <select
+                  value={selectedFoodCategory}
+                  onChange={(e) => setSelectedFoodCategory(e.target.value)}
+                  className="w-full px-3 py-2 rounded-md border border-input bg-background text-foreground text-sm"
+                  data-testid="select-category-meal"
+                >
+                  <option value="all">Tutte le categorie</option>
+                  {categories.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="space-y-2 flex-1 overflow-y-auto">
+              {filteredFoods.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  Nessun alimento trovato
+                </div>
+              ) : (
+                filteredFoods.map(food => (
+                  <Button
+                    key={food.id}
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => handleSelectFood(food.id)}
+                    data-testid={`button-food-${food.id}`}
+                  >
+                    <div className="flex-1 text-left">
+                      <p className="text-sm font-medium">{food.name}</p>
+                      <p className="text-xs text-muted-foreground">{food.category}</p>
+                    </div>
+                  </Button>
+                ))
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
