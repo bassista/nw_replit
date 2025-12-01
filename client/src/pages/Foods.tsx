@@ -27,6 +27,8 @@ import { useLanguage } from "@/lib/languageContext";
 import { loadFoods, saveFoods, loadCategories, saveCategories, loadSettings, saveDailyMeal, getDailyMeal } from "@/lib/storage";
 import { useToast } from "@/hooks/use-toast";
 import { Html5QrcodeScanner } from "html5-qrcode";
+import { useBarcodeScanner } from "@/hooks/use-barcode-scanner";
+import { isNative } from "@/lib/platform";
 import { matchesSmartSearch } from "@/lib/search";
 
 export default function Foods() {
@@ -45,6 +47,7 @@ export default function Foods() {
   const [isScanning, setIsScanning] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
   const scannerRef = useRef<Html5QrcodeScanner | null>(null);
+  const { startScan: startNativeScan, isScanning: isNativeScanning } = useBarcodeScanner();
   const [diaryDialogOpen, setDiaryDialogOpen] = useState(false);
   const [selectedFoodForDiary, setSelectedFoodForDiary] = useState<FoodItem | null>(null);
   const [diaryGrams, setDiaryGrams] = useState(100);
@@ -281,10 +284,23 @@ export default function Foods() {
   };
 
   const handleStartCamera = async () => {
-    const granted = await requestCameraPermission();
-    if (granted) {
-      setCameraActive(true);
-      // Lo scanner verrà inizializzato dal useEffect quando cameraActive diventa true
+    if (isNative()) {
+      // Chiudi il dialog prima di aprire lo scanner nativo
+      setBarcodeScannerOpen(false);
+      
+      // Usa scanner nativo su Android/iOS
+      const barcode = await startNativeScan();
+      if (barcode) {
+        setBarcodeInput(barcode);
+        await searchProductByBarcode(barcode);
+      }
+    } else {
+      // Usa html5-qrcode su web
+      const granted = await requestCameraPermission();
+      if (granted) {
+        setCameraActive(true);
+        // Lo scanner verrà inizializzato dal useEffect quando cameraActive diventa true
+      }
     }
   };
 
@@ -603,7 +619,7 @@ export default function Foods() {
           </DialogHeader>
 
           <div className="space-y-4">
-            {cameraActive ? (
+            {cameraActive && !isNative() ? (
               <>
                 <div 
                   id="qr-reader"
@@ -614,6 +630,12 @@ export default function Foods() {
                   Posiziona il codice a barre davanti alla fotocamera
                 </p>
               </>
+            ) : isNativeScanning ? (
+              <div className="flex flex-col items-center justify-center py-8 space-y-4">
+                <Loader className="w-8 h-8 animate-spin text-primary" />
+                <p className="text-sm text-muted-foreground">Scansione in corso...</p>
+                <p className="text-xs text-muted-foreground text-center">Inquadra il codice a barre</p>
+              </div>
             ) : (
               <div className="space-y-2">
                 <label className="text-sm font-medium">Codice a Barre (EAN/UPC)</label>
@@ -628,11 +650,14 @@ export default function Foods() {
                     }
                   }}
                   data-testid="input-barcode"
-                  disabled={isScanning || cameraActive}
+                  disabled={isScanning || cameraActive || isNativeScanning}
                   autoFocus
                 />
                 <p className="text-xs text-muted-foreground">
-                  Clicca su "Usa Fotocamera" oppure inserisci manualmente il codice EAN/UPC a 12-13 cifre.
+                  {isNative() 
+                    ? 'Clicca su "Scansiona Codice" oppure inserisci manualmente il codice EAN/UPC a 12-13 cifre.'
+                    : 'Clicca su "Usa Fotocamera" oppure inserisci manualmente il codice EAN/UPC a 12-13 cifre.'
+                  }
                 </p>
               </div>
             )}
@@ -652,20 +677,20 @@ export default function Foods() {
               {cameraActive ? "Chiudi" : "Annulla"}
             </Button>
             
-            {!cameraActive ? (
+            {!cameraActive && !isNativeScanning ? (
               <>
                 <Button
                   variant="outline"
                   onClick={handleStartCamera}
-                  disabled={isScanning}
+                  disabled={isScanning || isNativeScanning}
                   data-testid="button-use-camera"
                 >
                   <Barcode className="w-4 h-4 mr-2" />
-                  Usa Fotocamera
+                  {isNative() ? 'Scansiona Codice' : 'Usa Fotocamera'}
                 </Button>
                 <Button
                   onClick={handleScanBarcode}
-                  disabled={isScanning || !barcodeInput.trim()}
+                  disabled={isScanning || isNativeScanning || !barcodeInput.trim()}
                   data-testid="button-search-barcode"
                 >
                   {isScanning ? (
