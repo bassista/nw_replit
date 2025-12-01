@@ -223,13 +223,18 @@ export default function Meals() {
     const currentLists = loadShoppingLists();
     const startDate = format(currentWeekStart, 'd MMM', { locale: it });
     const endDate = format(addDays(currentWeekStart, 6), 'd MMM yyyy', { locale: it });
+    const listName = `Spesa Settimanale - ${startDate} / ${endDate}`;
+    
+    // Remove existing list with the same name if it exists
+    const filteredLists = currentLists.filter(list => list.name !== listName);
+    
     const newList = {
       id: Date.now().toString(),
-      name: `Spesa Settimanale - ${startDate} / ${endDate}`,
+      name: listName,
       items: Array.from(uniqueIngredients.values()),
       isPredefined: false,
     };
-    saveShoppingLists([...currentLists, newList]);
+    saveShoppingLists([...filteredLists, newList]);
     toast({
       title: 'Lista creata',
       description: `Lista settimanale creata con ${uniqueIngredients.size} ingredienti`,
