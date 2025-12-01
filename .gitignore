@@ -6,7 +6,7 @@ vite.config.ts.*
 *.tar.gz
 
 # Build outputs
-android/app/build/
+android/app/build/intermediates
 android/build/
 android/.gradle/
 android/app/.cxx/
