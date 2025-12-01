@@ -15,6 +15,7 @@ import { useState, useEffect } from "react";
 import { useLanguage } from "@/lib/languageContext";
 import { loadShoppingLists, saveShoppingLists, loadFoods } from "@/lib/storage";
 import type { FoodItem } from "@shared/schema";
+import { matchesSmartSearch } from "@/lib/search";
 
 export default function ShoppingLists() {
   const { t, language } = useLanguage();
@@ -105,7 +106,7 @@ export default function ShoppingLists() {
   };
 
   const filteredFoods = foods.filter(food => {
-    const matchesSearch = food.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = matchesSmartSearch(food.name, searchQuery);
     const matchesTab = activeTab === 'all' || food.isFavorite;
     return matchesSearch && matchesTab;
   });

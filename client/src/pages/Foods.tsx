@@ -27,6 +27,7 @@ import { useLanguage } from "@/lib/languageContext";
 import { loadFoods, saveFoods, loadCategories, saveCategories, loadSettings, saveDailyMeal, getDailyMeal } from "@/lib/storage";
 import { useToast } from "@/hooks/use-toast";
 import { Html5QrcodeScanner } from "html5-qrcode";
+import { matchesSmartSearch } from "@/lib/search";
 
 export default function Foods() {
   const { toast } = useToast();
@@ -91,7 +92,7 @@ export default function Foods() {
   }, [foods]);
 
   const filteredFoods = foods.filter(food => {
-    const matchesSearch = food.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = matchesSmartSearch(food.name, searchQuery);
     const matchesTab = activeTab === "all" || (activeTab === "favorites" && food.isFavorite);
     const matchesCategory = selectedCategory === "all" || food.category === selectedCategory;
     return matchesSearch && matchesTab && matchesCategory;

@@ -9,6 +9,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
 import type { FoodItem } from "@shared/schema";
 import type { Meal, MealIngredient } from "@/lib/storage";
+import { matchesSmartSearch } from "@/lib/search";
 
 interface AddMealDialogProps {
   open: boolean;
@@ -60,7 +61,7 @@ export default function AddMealDialog({ open, onClose, onSave, foods, initialMea
   
   // Filter foods based on search, category, and favorites
   const filteredFoods = foods.filter(food => {
-    const matchesSearch = food.name.toLowerCase().includes(foodSearchQuery.toLowerCase());
+    const matchesSearch = matchesSmartSearch(food.name, foodSearchQuery);
     const matchesCategory = selectedFoodCategory === "all" || food.category === selectedFoodCategory;
     const matchesFavorites = foodDialogTab === "all" || (foodDialogTab === "favorites" && food.isFavorite);
     return matchesSearch && matchesCategory && matchesFavorites;

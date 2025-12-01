@@ -29,6 +29,7 @@ import { loadFoods, loadMeals, saveMeals, loadWeeklyAssignments, assignMealToDay
 import { useToast } from "@/hooks/use-toast";
 import type { Meal, DailyMealItem } from "@/lib/storage";
 import type { FoodItem } from "@shared/schema";
+import { matchesSmartSearch } from "@/lib/search";
 
 export default function Meals() {
   const { toast } = useToast();
@@ -244,14 +245,14 @@ export default function Meals() {
 
   // Filter meals by search and favorites (for main list)
   const filteredMeals = meals.filter(meal => {
-    const matchesSearch = meal.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = matchesSmartSearch(meal.name, searchQuery);
     const matchesFavorite = !showOnlyFavorites || meal.isFavorite;
     return matchesSearch && matchesFavorite;
   });
 
   // Filter meals for day selection dialog
   const filteredMealsForDay = meals.filter(meal => {
-    const matchesSearch = meal.name.toLowerCase().includes(mealSearchQuery.toLowerCase());
+    const matchesSearch = matchesSmartSearch(meal.name, mealSearchQuery);
     const matchesFavorite = !showOnlyFavoriteMeals || meal.isFavorite;
     return matchesSearch && matchesFavorite;
   });

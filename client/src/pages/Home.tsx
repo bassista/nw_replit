@@ -31,6 +31,7 @@ import type { FoodItem } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import { matchesSmartSearch } from "@/lib/search";
 
 export default function Home() {
   const { toast } = useToast();
@@ -315,7 +316,7 @@ export default function Home() {
   const categories = Array.from(new Set(availableFoods.map(f => f.category))).sort();
 
   const filteredFoods = availableFoods.filter(food => {
-    const matchesSearch = food.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = matchesSmartSearch(food.name, searchQuery);
     const matchesCategory = selectedCategory === 'all' || food.category === selectedCategory;
     const matchesFavorites = foodDialogTab === "all" || (foodDialogTab === "favorites" && food.isFavorite);
     return matchesSearch && matchesCategory && matchesFavorites;
