@@ -6,10 +6,10 @@ vite.config.ts.*
 *.tar.gz
 
 # Build outputs
+android/.gradle/
 android/app/build/intermediates
 android/build/
-android/.gradle/
-android/app/.cxx/
+android/capacitor-cordova-android-plugins/build
 android/local.properties
 
 # IDE
