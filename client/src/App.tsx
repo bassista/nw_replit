@@ -7,6 +7,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider } from "@/lib/languageContext";
 import { useAppStore } from "@/context/AppStore";
 import { useWaterReminders } from "@/hooks/use-water-reminders";
+import { isNative } from "@/lib/platform";
+import { App as CapApp } from '@capacitor/app';
+import { StatusBar, Style } from '@capacitor/status-bar';
+import { SplashScreen } from '@capacitor/splash-screen';
 import BottomNav from "@/components/BottomNav";
 import Home from "@/pages/Home";
 import Foods from "@/pages/Foods";
@@ -43,18 +47,56 @@ function AppContent() {
     loadAppState();
   }, []);
 
-  // Register Service Worker and setup water reminders
+  // Initialize Capacitor or Service Worker
   useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch((error) => {
-        console.error('SW registration failed:', error);
-      });
+    const initCapacitor = async () => {
+      if (isNative()) {
+        // Native app initialization
+        try {
+          // Hide splash screen after app is loaded
+          await SplashScreen.hide();
 
-      // Request notification permission
-      if ('Notification' in window && Notification.permission === 'default') {
-        Notification.requestPermission();
+          // Configure status bar
+          await StatusBar.setStyle({ style: Style.Light });
+          await StatusBar.setBackgroundColor({ color: '#22c55e' });
+        } catch (error) {
+          console.error('Error initializing Capacitor:', error);
+        }
+
+        // Handle back button on Android
+        CapApp.addListener('backButton', ({ canGoBack }) => {
+          if (!canGoBack) {
+            CapApp.exitApp();
+          } else {
+            window.history.back();
+          }
+        });
+
+        // Handle app state changes
+        CapApp.addListener('appStateChange', ({ isActive }) => {
+          console.log('App state changed. Is active?', isActive);
+          if (isActive) {
+            // Reload app state when app becomes active
+            useAppStore.getState().loadState();
+          }
+        });
+      } else {
+        // Web: Register Service Worker
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.register('/sw.js').catch((error) => {
+            console.error('SW registration failed:', error);
+          });
+        }
       }
-    }
+    };
+
+    initCapacitor();
+
+    return () => {
+      if (isNative()) {
+        CapApp.removeAllListeners();
+      }
+    };
   }, []);
 
   // Use water reminders hook

@@ -29,7 +29,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Save, Download, Upload, Trash2, Plus, Edit2, ChevronDown, Info } from "lucide-react";
+import { Save, Download, Upload, Trash2, Plus, Edit2, ChevronDown, Info, Bell } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import {
   Collapsible,
@@ -48,6 +48,8 @@ import type { Language } from "@/lib/i18n";
 import { loadSettings, saveSettings, loadCategories, saveCategories, exportAllData, importAllData, clearAllData, exportFoodsAsCSV, importFoodsFromCSV, saveFoods } from "@/lib/storage";
 import { useAppStore } from "@/context/AppStore";
 import { useToast } from "@/hooks/use-toast";
+import { LocalNotifications } from '@capacitor/local-notifications';
+import { isNative } from '@/lib/platform';
 
 export default function Settings() {
   const { toast } = useToast();
@@ -227,6 +229,88 @@ export default function Settings() {
       reader.readAsText(file);
     };
     input.click();
+  };
+
+  const testNotification = async () => {
+    if (isNative()) {
+      try {
+        // Controlla permessi
+        let permStatus = await LocalNotifications.checkPermissions();
+        
+        if (permStatus.display !== 'granted') {
+          // Richiedi permessi
+          permStatus = await LocalNotifications.requestPermissions();
+          
+          if (permStatus.display !== 'granted') {
+            toast({
+              title: language === 'it' ? "Permessi negati" : "Permission denied",
+              description: language === 'it' ? "Abilita i permessi notifiche nelle impostazioni" : "Enable notification permissions in settings",
+              variant: "destructive"
+            });
+            return;
+          }
+        }
+
+        // Invia notifica di test
+        const notificationId = Math.floor(Math.random() * 2147483647);
+        await LocalNotifications.schedule({
+          notifications: [
+            {
+              title: '🧪 Test Notifica',
+              body: language === 'it' ? 'Le notifiche funzionano correttamente!' : 'Notifications are working correctly!',
+              id: notificationId,
+              schedule: { at: new Date(Date.now() + 2000) },
+              sound: undefined,
+              attachments: undefined,
+              actionTypeId: "",
+              extra: null
+            }
+          ]
+        });
+
+        toast({
+          title: language === 'it' ? "Notifica inviata" : "Notification sent",
+          description: language === 'it' ? "Controlla le notifiche tra 2 secondi" : "Check notifications in 2 seconds"
+        });
+      } catch (error) {
+        console.error('Error sending test notification:', error);
+        toast({
+          title: language === 'it' ? "Errore" : "Error",
+          description: language === 'it' ? "Impossibile inviare notifica: " + error : "Cannot send notification: " + error,
+          variant: "destructive"
+        });
+      }
+    } else {
+      // Web notification test
+      if ('Notification' in window) {
+        if (Notification.permission === 'granted') {
+          new Notification('🧪 Test Notifica', {
+            body: language === 'it' ? 'Le notifiche funzionano correttamente!' : 'Notifications are working correctly!'
+          });
+          toast({
+            title: language === 'it' ? "Notifica inviata" : "Notification sent",
+            description: language === 'it' ? "Controlla le notifiche del browser" : "Check browser notifications"
+          });
+        } else if (Notification.permission !== 'denied') {
+          const permission = await Notification.requestPermission();
+          if (permission === 'granted') {
+            new Notification('🧪 Test Notifica', {
+              body: language === 'it' ? 'Le notifiche funzionano correttamente!' : 'Notifications are working correctly!'
+            });
+            toast({
+              title: language === 'it' ? "Notifica inviata" : "Notification sent",
+              description: language === 'it' ? "Controlla le notifiche del browser" : "Check browser notifications"
+            });
+          }
+        } else {
+          toast({
+            title: language === 'it' ? "Permessi negati" : "Permission denied",
+            description: language === 'it' ? "Abilita i permessi notifiche nelle impostazioni del browser" : "Enable notification permissions in browser settings",
+            variant: "destructive"
+          });
+        }
+      }
+    }
   };
 
   const handleAddCategory = () => {
@@ -526,6 +610,13 @@ export default function Settings() {
                       data-testid="input-end-hour"
                     />
                   </div>
+                </div>
+
+                <div className="pt-4 border-t">
+                  <Button onClick={testNotification} variant="outline" className="w-full">
+                    <Bell className="w-4 h-4 mr-2" />
+                    {language === 'it' ? 'Test Notifica' : 'Test Notification'}
+                  </Button>
                 </div>
               </>
             )}

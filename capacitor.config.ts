@@ -1,3 +1,4 @@
+
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
@@ -6,6 +7,24 @@ const config: CapacitorConfig = {
   webDir: 'dist/public',
   server: {
     androidScheme: 'https'
+  },
+  plugins: {
+    LocalNotifications: {
+      smallIcon: "ic_stat_icon_config_sample",
+      iconColor: "#22c55e",
+      sound: "beep.wav"
+    },
+    SplashScreen: {
+      launchShowDuration: 2000,
+      backgroundColor: "#22c55e",
+      showSpinner: false,
+      androidSpinnerStyle: "small",
+      iosSpinnerStyle: "small"
+    },
+    StatusBar: {
+      style: 'LIGHT',
+      backgroundColor: "#22c55e"
+    }
   }
 };
 
