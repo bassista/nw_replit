@@ -284,12 +284,14 @@ export default function Foods() {
 
   const handleStartCamera = async () => {
     if (isNative()) {
+      // Chiudi il dialog prima di aprire lo scanner nativo
+      setBarcodeScannerOpen(false);
+      
       // Usa scanner nativo su Android/iOS
       const barcode = await startNativeScan();
       if (barcode) {
         setBarcodeInput(barcode);
         await searchProductByBarcode(barcode);
-        setBarcodeScannerOpen(false);
       }
     } else {
       // Usa html5-qrcode su web
