@@ -7,3 +7,12 @@ Con Food & Water Tracker puoi:
 ✅ Tracking Idratazione: imposta il tuo target giornaliero, aggiungi bicchieri con un tap e ricevi promemoria personalizzati per bere acqua.  
 ✅ Liste della Spesa: crea liste illimitate, aggiungi alimenti dal database o manualmente, e genera automaticamente la lista settimanale della spesa.  
 ✅ Gamification e Sfide: guadagna badge, sfide e ricevi notifiche motivazionali.  
+
+
+Build Androind apk
+npm install
+j17 (ensure to have at least jdk 17 configured in JAVA_HOME)
+if needed edit android/local.properties to add sdk.dir=${YOUR_ANDROID_SDK_PATH} i.e. sdk.dir=C:\\tools\\apps\\Android\\Sdk
+npm run android:build
+
+the new created apk will be located in ./android/app/build/outputs/apk/debug/app-debug.apk
