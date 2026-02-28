@@ -88,7 +88,7 @@ export default function Settings() {
         await Filesystem.writeFile({
           path: filename,
           data: jsonData,
-          directory: Directory.Download,
+          directory: Directory.ExternalStorage,
           encoding: 'utf8'
         });
         toast({
@@ -113,9 +113,14 @@ export default function Settings() {
       }
     } catch (error) {
       console.error('Error exporting data:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorStack = error instanceof Error ? error.stack : '';
+      console.error('Error stack trace:', errorStack);
       toast({
         title: language === 'it' ? 'Errore nell\'esportazione' : 'Export error',
-        description: language === 'it' ? 'Si è verificato un errore durante l\'esportazione dei dati.' : 'An error occurred during data export.',
+        description: language === 'it' 
+          ? `Si è verificato un errore: ${errorMessage}` 
+          : `An error occurred: ${errorMessage}`,
         variant: "destructive",
       });
     }
@@ -203,7 +208,7 @@ export default function Settings() {
         await Filesystem.writeFile({
           path: filename,
           data: csv,
-          directory: Directory.Download,
+          directory: Directory.ExternalStorage,
           encoding: 'utf8'
         });
         toast({
