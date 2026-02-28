@@ -8,8 +8,7 @@ WORKDIR /app
 
 COPY package.json package-lock.json ./
 
-RUN --mount=type=cache,target=/root/.npm \
-    npm ci --no-audit --no-fund
+RUN npm ci --no-audit --no-fund
 
 COPY . .
 
@@ -27,8 +26,7 @@ RUN apk add --no-cache tini
 
 COPY --chown=node:node package.json package-lock.json ./
 
-RUN --mount=type=cache,target=/root/.npm \
-    npm ci --omit=dev --no-audit --no-fund \
+RUN npm ci --omit=dev --no-audit --no-fund \
     && npm cache clean --force
 
 COPY --from=builder --chown=node:node /app/dist ./dist
