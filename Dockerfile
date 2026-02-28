@@ -1,34 +1,39 @@
-FROM node:18-bullseye-slim  AS builder
+ARG NODE_VERSION=20-alpine
 
+########################
+# Stage: deps + build  #
+########################
+FROM node:${NODE_VERSION} AS builder
 WORKDIR /app
 
 COPY package.json package-lock.json ./
 
-RUN npm ci
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --no-audit --no-fund
 
 COPY . .
 
 RUN npm run build
 
-FROM node:20-alpine
+########################
+# Stage: runtime       #
+########################
+FROM node:${NODE_VERSION} AS runner
 WORKDIR /app
 
-RUN apk add --no-cache dumb-init
+ENV NODE_ENV=production
 
-COPY package.json package-lock.json ./
+RUN apk add --no-cache tini
 
-RUN npm ci && \
-    npm cache clean --force
+COPY --chown=node:node package.json package-lock.json ./
 
-COPY --from=builder /app/dist ./dist
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --omit=dev --no-audit --no-fund \
+    && npm cache clean --force
 
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
+COPY --from=builder --chown=node:node /app/dist ./dist
 
-USER nodejs
-
+USER node
 EXPOSE 5000
-
-ENTRYPOINT ["dumb-init", "--"]
-
+ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["npm", "start"]
