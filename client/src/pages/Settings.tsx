@@ -116,6 +116,8 @@ export default function Settings() {
       const errorMessage = error instanceof Error ? error.message : String(error);
       const errorStack = error instanceof Error ? error.stack : '';
       console.error('Error stack trace:', errorStack);
+      // Show alert with full error for debugging on mobile
+      alert(`Export Error:\n${errorMessage}\n\nStack:\n${errorStack}`);
       toast({
         title: language === 'it' ? 'Errore nell\'esportazione' : 'Export error',
         description: language === 'it' 
