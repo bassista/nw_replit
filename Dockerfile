@@ -26,7 +26,8 @@ RUN apk add --no-cache tini
 
 COPY --chown=node:node package.json package-lock.json ./
 
-RUN npm ci --omit=dev --no-audit --no-fund \
+#non posso usare --omit=dev per compa di un import di vite, va sistemato
+RUN npm ci --no-audit --no-fund \
     && npm cache clean --force
 
 COPY --from=builder --chown=node:node /app/dist ./dist
