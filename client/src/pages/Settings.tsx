@@ -85,17 +85,18 @@ export default function Settings() {
 
       if (isNative()) {
         // On mobile (Android), save to Documents folder
-        await Filesystem.writeFile({
+        const result = await Filesystem.writeFile({
           path: filename,
           data: jsonData,
           directory: Directory.Documents,
-          encoding: 'utf8'
+          encoding: 'utf8' as any,
+          recursive: true
         });
         toast({
           title: language === 'it' ? 'Esportazione completata' : 'Export successful',
           description: language === 'it' 
-            ? `I tuoi dati sono stati salvati nei Documenti come ${filename}` 
-            : `Your data has been saved to the Documents folder as ${filename}`,
+            ? `I tuoi dati sono stati salvati nei Documenti come ${result.uri ?? filename}` 
+            : `Your data has been saved to the Documents folder as ${result.uri ?? filename}`,
         });
       } else {
         // On web, use standard download
@@ -207,17 +208,18 @@ export default function Settings() {
 
       if (isNative()) {
         // On mobile (Android), save to Documents folder
-        await Filesystem.writeFile({
+        const result = await Filesystem.writeFile({
           path: filename,
           data: csv,
           directory: Directory.Documents,
-          encoding: 'utf8'
+          encoding: 'utf8' as any,
+          recursive: true
         });
         toast({
           title: language === 'it' ? 'Esportazione completata' : 'Export successful',
           description: language === 'it' 
-            ? `I tuoi dati sono stati salvati nei Documenti come ${filename}` 
-            : `Your data has been saved to the Documents folder as ${filename}`,
+            ? `I tuoi dati sono stati salvati nei Documenti come ${result.uri ?? filename}` 
+            : `Your data has been saved to the Documents folder as ${result.uri ?? filename}`,
         });
       } else {
         // On web, use standard download
