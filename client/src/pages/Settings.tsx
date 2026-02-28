@@ -84,18 +84,19 @@ export default function Settings() {
       const filename = `nutritrack-data-${new Date().toISOString().split('T')[0]}.json`;
 
       if (isNative()) {
-        // On mobile (Android), save to Downloads folder
-        await Filesystem.writeFile({
+        // On mobile (Android), save to Documents folder
+        const result = await Filesystem.writeFile({
           path: filename,
           data: jsonData,
-          directory: Directory.ExternalStorage,
-          encoding: 'utf8'
+          directory: Directory.Documents,
+          encoding: 'utf8' as any,
+          recursive: true
         });
         toast({
           title: language === 'it' ? 'Esportazione completata' : 'Export successful',
           description: language === 'it' 
-            ? `I tuoi dati sono stati salvati nella cartella Download come ${filename}` 
-            : `Your data has been saved to the Downloads folder as ${filename}`,
+            ? `I tuoi dati sono stati salvati nei Documenti come ${result.uri ?? filename}` 
+            : `Your data has been saved to the Documents folder as ${result.uri ?? filename}`,
         });
       } else {
         // On web, use standard download
@@ -206,18 +207,19 @@ export default function Settings() {
       const filename = `nutritrack-foods-${new Date().toISOString().split('T')[0]}.csv`;
 
       if (isNative()) {
-        // On mobile (Android), save to Downloads folder
-        await Filesystem.writeFile({
+        // On mobile (Android), save to Documents folder
+        const result = await Filesystem.writeFile({
           path: filename,
           data: csv,
-          directory: Directory.ExternalStorage,
-          encoding: 'utf8'
+          directory: Directory.Documents,
+          encoding: 'utf8' as any,
+          recursive: true
         });
         toast({
           title: language === 'it' ? 'Esportazione completata' : 'Export successful',
           description: language === 'it' 
-            ? `I tuoi dati sono stati salvati nella cartella Download come ${filename}` 
-            : `Your data has been saved to the Downloads folder as ${filename}`,
+            ? `I tuoi dati sono stati salvati nei Documenti come ${result.uri ?? filename}` 
+            : `Your data has been saved to the Documents folder as ${result.uri ?? filename}`,
         });
       } else {
         // On web, use standard download
