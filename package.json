@@ -24,6 +24,7 @@
     "@capacitor/cli": "^5.7.8",
     "@capacitor/core": "^5.7.8",
     "@capacitor/device": "^5.0.8",
+    "@capacitor/filesystem": "^5.2.2",
     "@capacitor/local-notifications": "^5.0.8",
     "@capacitor/preferences": "^5.0.8",
     "@capacitor/splash-screen": "^5.0.8",

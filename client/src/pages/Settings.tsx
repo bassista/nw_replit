@@ -50,6 +50,7 @@ import { useAppStore } from "@/context/AppStore";
 import { useToast } from "@/hooks/use-toast";
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { isNative } from '@/lib/platform';
+import { Filesystem, Directory } from '@capacitor/filesystem';
 
 export default function Settings() {
   const { toast } = useToast();
@@ -80,17 +81,36 @@ export default function Settings() {
   const handleExportData = async () => {
     try {
       const jsonData = await exportAllData();
-      const blob = new Blob([jsonData], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `nutritrack-data-${new Date().toISOString().split('T')[0]}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      toast({
-        title: language === 'it' ? 'Esportazione completata' : 'Export successful',
-        description: language === 'it' ? 'I tuoi dati sono stati esportati correttamente.' : 'Your data has been exported successfully.',
-      });
+      const filename = `nutritrack-data-${new Date().toISOString().split('T')[0]}.json`;
+
+      if (isNative()) {
+        // On mobile (Android), save to Downloads folder
+        await Filesystem.writeFile({
+          path: filename,
+          data: jsonData,
+          directory: Directory.Download,
+          encoding: 'utf8'
+        });
+        toast({
+          title: language === 'it' ? 'Esportazione completata' : 'Export successful',
+          description: language === 'it' 
+            ? `I tuoi dati sono stati salvati nella cartella Download come ${filename}` 
+            : `Your data has been saved to the Downloads folder as ${filename}`,
+        });
+      } else {
+        // On web, use standard download
+        const blob = new Blob([jsonData], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast({
+          title: language === 'it' ? 'Esportazione completata' : 'Export successful',
+          description: language === 'it' ? 'I tuoi dati sono stati esportati correttamente.' : 'Your data has been exported successfully.',
+        });
+      }
     } catch (error) {
       console.error('Error exporting data:', error);
       toast({
@@ -173,19 +193,42 @@ export default function Settings() {
     }
   };
 
-  const handleExportFoodsCSV = () => {
+  const handleExportFoodsCSV = async () => {
     try {
       const csv = exportFoodsAsCSV();
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `nutritrack-foods-${new Date().toISOString().split('T')[0]}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
+      const filename = `nutritrack-foods-${new Date().toISOString().split('T')[0]}.csv`;
+
+      if (isNative()) {
+        // On mobile (Android), save to Downloads folder
+        await Filesystem.writeFile({
+          path: filename,
+          data: csv,
+          directory: Directory.Download,
+          encoding: 'utf8'
+        });
+        toast({
+          title: language === 'it' ? 'Esportazione completata' : 'Export successful',
+          description: language === 'it' 
+            ? `I tuoi dati sono stati salvati nella cartella Download come ${filename}` 
+            : `Your data has been saved to the Downloads folder as ${filename}`,
+        });
+      } else {
+        // On web, use standard download
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
     } catch (error) {
       console.error('Error exporting foods:', error);
-      alert(language === 'it' ? 'Errore nell\'esportazione dei cibi' : 'Error exporting foods');
+      toast({
+        title: language === 'it' ? 'Errore nell\'esportazione' : 'Export error',
+        description: language === 'it' ? 'Si è verificato un errore durante l\'esportazione dei cibi.' : 'An error occurred while exporting foods.',
+        variant: "destructive",
+      });
     }
   };
 
