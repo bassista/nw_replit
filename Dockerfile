@@ -20,7 +20,8 @@ RUN npm run build
 FROM node:${NODE_VERSION} AS runner
 WORKDIR /app
 
-ENV NODE_ENV=production
+#vite serve a runtime
+#ENV NODE_ENV=production
 
 RUN apk add --no-cache tini
 
